@@ -63,7 +63,6 @@
                     unitOptions = iframe.contents().find("[data-type]").data(),
                     slotname = slot.attr("data-slotname");
 
-
                 if (typeof unitOptions === "undefined") {
                     // No ad unit for this slot
                 }
@@ -74,11 +73,14 @@
                     $("body").addClass("ad-" + slotname + "-" + unitOptions.type.toLowerCase() );
 
                     this.units[slotname] = new Ads.units[unitOptions.type](this, slot, iframe, unitOptions);
+
                     //maybe throw a warning if there is more than one blocker. Not really a thing that should be allowed.
-                    if (unitOptions.blocking) { 
-                        // got a blocker? build now. 
-                        this.units[slotname].build()
+                    if (this.units[slotname].options.blocking) { 
+                        // got a blocker? build now. Pass in a callBack for on destroy
+                        this.units[slotname].build();
                         blocker = true;
+                        // alias the destroy function for this unit, so it is easy to call from Flash. 
+                        window.closeAd = $.proxy(this.units[slotname].destroy, this.units[slotname]);
                     } 
                 }
                 //TODO: afns-ad-element shit
@@ -90,13 +92,23 @@
             }
         }
 
-        this.run = function() {            
+        this.run = function() {      
             // build all ad units at current runlevel, then decrement
             var slots = Object.keys(this.units);
             for (var i = 0; i < slots.length; i++) {
                 this.units[slots[i]].build()
             }
         };
+
+        this.destroy = function() {
+            // kill all ad units
+            var slots = Object.keys(this.units);
+            for (var i = 0; i < slots.length; i++) {
+                this.units[slots[i]].destroy()
+            }
+
+            //TODO: remove all classnames from body that begin with "ad-"
+        }
 
     })
 })(this.Ads);

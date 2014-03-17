@@ -19,6 +19,63 @@
         return constructor;
     }
 }));;/*
+    FlashReplace is developed by Robert Nyman, http://www.robertnyman.com. License and downloads: http://code.google.com/p/flashreplace/
+*/
+
+var FlashReplace = {
+    elmToReplace : null,
+    flashIsInstalled : null,
+    defaultFlashVersion : 7,
+    replace : function (elmToReplace, src, id, width, height, version, params){
+        this.elmToReplace = elmToReplace; //document.getElementById(elmToReplace);
+        this.flashIsInstalled = this.checkForFlash(version || this.defaultFlashVersion);
+        if(this.elmToReplace && this.flashIsInstalled){
+            var obj = '<object' + ((window.ActiveXObject)? ' id="' + id + '" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" data="' + src + '"' : '');
+            obj += ' width="' + width + '"';
+            obj += ' height="' + height + '"';
+            obj += '>';
+            var param = '<param';
+            param += ' name="movie"';
+            param += ' value="' + src + '"';
+            param += '>';
+            param += '';
+            var extraParams = '';
+            var extraAttributes = '';
+            for(var i in params){
+                extraParams += '<param name="' + i + '" value="' + params[i] + '">';
+                extraAttributes += ' ' + i + '="' + params[i] + '"';
+            }
+            var embed = '<embed id="' + id + '" src="' + src + '" type="application/x-shockwave-flash" width="' + width + '" height="' + height + '"';
+            var embedEnd = extraAttributes + '></embed>';
+            var objEnd = '</object>';
+            this.elmToReplace.innerHTML = obj + param + extraParams + embed + embedEnd + objEnd;            
+        }
+    },
+    
+    checkForFlash : function (version){
+        this.flashIsInstalled = false;
+        var flash;
+        if(window.ActiveXObject){
+            try{
+                flash = new ActiveXObject(("ShockwaveFlash.ShockwaveFlash." + version));
+                this.flashIsInstalled = true;
+            }
+            catch(e){
+                // Throws an error if the version isn't available           
+            }
+        }
+        else if(navigator.plugins && navigator.mimeTypes.length > 0){
+            flash = navigator.plugins["Shockwave Flash"];
+            if(flash){
+                var flashVersion = navigator.plugins["Shockwave Flash"].description.replace(/.*\s(\d+\.\d+).*/, "$1");
+                if(flashVersion >= version){
+                    this.flashIsInstalled = true;
+                }
+            }
+        }
+        return this.flashIsInstalled;
+    }
+};;/*
 
     Ads is responsible for 
     - handling external configuration
@@ -36,7 +93,6 @@
         this.init = function() {
             
             /* logic to choose loader goes here. */
-
             var loaderType = "DfpLoader";
 
             //Adbuilder link
@@ -58,8 +114,21 @@
             this.loader.load();
         }
 
-        this.addTargeting = function(name, value) {
-            targeting[name] = value;
+        /*  setSelector & setTargeting 
+
+            Use these guys for responsive stuff. You can externally define a resize listener
+            that updates the selector used to grab which ads are visible.
+
+        */
+
+        // Change selector used to find slots after Ads has been initiated
+        this.setSelector = function(selector) {
+            this.options.selector = selector
+        }
+
+        // Change targeting after Ads has been initialized. 
+        this.setTargeting = function(newTargeting) {
+            this.options.targeting = newTargeting;
         }
 
         this.refresh = function() {
@@ -152,7 +221,6 @@
                     unitOptions = iframe.contents().find("[data-type]").data(),
                     slotname = slot.attr("data-slotname");
 
-
                 if (typeof unitOptions === "undefined") {
                     // No ad unit for this slot
                 }
@@ -163,11 +231,14 @@
                     $("body").addClass("ad-" + slotname + "-" + unitOptions.type.toLowerCase() );
 
                     this.units[slotname] = new Ads.units[unitOptions.type](this, slot, iframe, unitOptions);
+
                     //maybe throw a warning if there is more than one blocker. Not really a thing that should be allowed.
-                    if (unitOptions.blocking) { 
-                        // got a blocker? build now. 
-                        this.units[slotname].build()
+                    if (this.units[slotname].options.blocking) { 
+                        // got a blocker? build now. Pass in a callBack for on destroy
+                        this.units[slotname].build();
                         blocker = true;
+                        // alias the destroy function for this unit, so it is easy to call from Flash. 
+                        window.closeAd = $.proxy(this.units[slotname].destroy, this.units[slotname]);
                     } 
                 }
                 //TODO: afns-ad-element shit
@@ -179,7 +250,7 @@
             }
         }
 
-        this.run = function() {            
+        this.run = function() {      
             // build all ad units at current runlevel, then decrement
             var slots = Object.keys(this.units);
             for (var i = 0; i < slots.length; i++) {
@@ -187,15 +258,107 @@
             }
         };
 
+        this.destroy = function() {
+            // kill all ad units
+            var slots = Object.keys(this.units);
+            for (var i = 0; i < slots.length; i++) {
+                this.units[slots[i]].destroy()
+            }
+
+            //TODO: remove all classnames from body that begin with "ad-"
+        }
+
     })
 })(this.Ads);;/* Loads ads from DFP */
 ;(function(Ads) {
     "use strict";
     Ads.DfpLoader = augment(Ads.BaseLoader, function(uber) {
         this.constructor = function(options) {
-            console.log("DFP constructor");
             uber.constructor.call(this, options);
+            this.activeAds = {}
         }
+
+        this.refresh = function() {
+            /* var web_ads = [];
+            self.ad_units.demolish();
+            $(self.visible_ads).each(function(i){
+                var slot_name = this.id.replace("dfp-ad-", "");
+                web_ads.push(self.active_list[slot_name]);
+            });
+            googletag.pubads().refresh(web_ads);
+            */
+        }
+        
+        this.load = function() {
+            window.googletag = window.googletag || {};
+            googletag.cmd = googletag.cmd || [];
+            var self = this;
+            (function() {
+                var gads = document.createElement("script");
+                gads.async = true;
+                gads.type = "text/javascript";
+                gads.id = "dfp_script";
+                var useSSL = "https:" == document.location.protocol;
+                gads.src = "http://www.googletagservices.com/tag/js/gpt.js";
+                var node = document.getElementsByTagName("script")[0];
+                node.parentNode.insertBefore(gads, node);
+            })();
+            googletag.cmd.push($.proxy(this.dfpReady, this));
+        }
+
+
+        this.dfpReady = function() {
+            var targeting = this.options.targeting;
+            for (var t in targeting) {
+                if (targeting[t]) googletag.pubads().setTargeting(t, targeting[t].toString());
+            }
+            var self = this;
+
+            self.slotsToRender = self.slots.length;
+
+            // we need to wait for all slots to finish before calling initalizeSlots. 
+            // There is no "global" ready, need to do it this way.
+            googletag.pubads().addEventListener('slotRenderEnded', function(event) {
+                self.slotsToRender--;
+                if (self.slotsToRender === 0) {
+                    setTimeout($.proxy(self.initializeUnits, self), 50);
+                }
+            });
+
+            $(this.slots).each(function(){
+                var s = this;
+                var slotName = $(s).data("slotname"),
+                    h = $(s).data('height'),
+                    w = $(s).data('width');
+                var ad = googletag.defineSlot('/' + self.options.dfpNetworkCode + '/' + slotName, [w, h], s.id).addService(googletag.pubads());
+                self.activeAds[slotName] = ad;
+            });
+
+            googletag.pubads().collapseEmptyDivs();
+            googletag.pubads().enableSingleRequest();
+            googletag.enableServices();
+            
+            // display ads
+            $(this.slots).each(function(){
+                googletag.display(this.id);
+            });
+        }
+
+        this.destroy = function() {
+            //gross, but it works. Prevents weird JS errors between reloads when changing the ad slots
+            var dfp_junk = ["googletag", "GPT_jstiming",  "Goog_AdSense_getAdAdapterInstance",
+            "Goog_AdSense_OsdAdapter", "google_noFetch", "google_DisableInitialLoad", "_GA_googleCookieHelper",
+            "__google_ad_urls", "google_unique_id", "google_exp_persistent", "google_num_sdo_slots",
+            "google_num_0ad_slots", "google_num_ad_slots", "google_correlator", "google_prev_ad_formats_by_region",
+            "google_prev_ad_slotnames_by_region", "google_num_slots_by_channel", "google_viewed_host_channels",
+            "google_num_slot_to_show", "gaGlobal", "google_persistent_state", "google_onload_fired"];
+
+            uber.destroy.call(this, options);
+
+            $("#dfp_script").remove();
+            for (var i=0;i<dfp_junk.length;i++) delete window[dfp_junk[i]];
+        }
+
     });
 })(this.Ads);/*  JsonLoader is pretty chill, by design. 
 
@@ -245,9 +408,10 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
+        this.defaults = {}
 
         this.constructor = function(loader, $slot, $iframe, options) {
-            this.options = options;
+            this.options = $.extend(this.defaults, options);
             this.loader = loader;
             this.$iframe = $iframe;
             this.$body = $("body", $iframe.contents()),
@@ -299,13 +463,14 @@
 
         this.destroy = function() {
             //any time and unit is destroyed, call the loader's run to get the next runlevel
-            $iframe.remove();
+            this.$slot.remove();
             this.loader.run();
         }
 
         this.firePixel = function (url) {
-            if (url) {
-                this.$body.append($("<img style=\"display:none\" src=\"" + $.trim(url) + "\">"));
+            if (url && window) {
+                var i = new Image();
+                i.src = (url);
             }
         }
 
@@ -328,44 +493,57 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.Swf = augment(Ads.units.BaseUnit, function(uber) {
-
-        this.constructor = function(loader, slot, iframe, options) {
-            uber.constructor(loader, slot, iframe, options);
+        this.constructor = function(loader, $slot, $iframe, options) {
+            uber.constructor.call(this, loader, $slot, $iframe, options);
         }
 
-        //options are DFP params
-        this.render = function() {
-
-        }
-
-        this.destroy = function() {
-
-        }
+        this.setMarkup = function($body) {
+            var element = $("div", $body)[0];
+            if (FlashReplace.checkForFlash(7)) {
+                FlashReplace.replace(element,
+                    this.options.swf + "?" + this.options.clickTagName + "=" +    escape(this.options.clickthru), "",
+                    this.options.width,
+                    this.options.height,
+                    7,
+                    {
+                    wmode : "transparent",
+                    quality: "high",
+                    allowScriptAccess: "always"
+                });
+            }
+            else {
+                $(element).append('<img src="' + this.options.staticImage + '"/>');
+            }
+        };
     })
 })(this.Ads);/*
    
 */  
 ;(function(Ads) {
     "use strict";
-    Ads.units.SwfStunt = augment(Ads.units.BaseUnit, function(uber) {
-
+    Ads.units.SwfStunt = augment(Ads.units.Swf, function(uber) {
+        this.defaults = {
+            width: 800,
+            height: 600,
+            delay: 8,
+            blocking: true,
+            clickTagName: "clickTag"
+        }
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }
 
         this.setStyle = function($body) {
-            uber.setStyle.call(this, $body);
-            $body.css({
-                backgroundColor: "red",
-                textAlign: "center"
+            this.$slot.css({
+                position: "absolute",
+                zIndex:10000000,
+                left: "50%",
+                marginLeft: -this.options.width/2,
             });
+            
+            this.resize(this.options.width, this.options.height);
+            setTimeout($.proxy(this.destroy, this), this.options.delay * 1000);
         }
-
-        this.setMarkup = function($body) {
-            uber.setMarkup.call(this, $body);
-            $body.append("THIS IS A SWF STUNT");
-        };
-
     })
 })(self.Ads);;;/*
    

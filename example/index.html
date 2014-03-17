@@ -9,20 +9,27 @@
                 margin: 20px;
                 position:relative;
             }
+
+            /* The site's css is responsible for positioning the iframe for a particular unit */
+            body.ad-stunt-swfstunt .ad[data-slotname="stunt"] {
+                background-color:#ffffff;
+                top:50px;
+            }
+
         </style>
     </head>
     <body>
+        <div class="ad" data-slotname="stunt" data-height="1" data-width="1" style="width: 1px; height: 1px;"></div>
 
         <div class="ad" data-slotname="wallpaper" data-height="1" data-width="1" style="width: 1px; height: 1px"></div>
 
         <div class="ad" data-slotname="header" data-height="90" data-width="728" style="width: 728px; height: 90px"></div>
-
+        
         <div class="ad" data-slotname="box" data-height="250" data-width="300" style="width: 300px; height: 250px"></div>
 
-        <div class="ad" data-slotname="stunt" data-height="1" data-width="1" style="width: 1px; height: 1px;"></div>
 
 
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 
         <script src="../build/onion-ads.js"></script>
         <script>
@@ -31,12 +38,15 @@
             var ads = new Ads({
                 //options
                 selector: ".ad",
+                flashReplace: "http://www.theonion.com/static/ads/flashreplace.js",
                 data: {
                     wallpaper: '<div data-type="Skin" data-pixel="http://placehold.it/1x1" data-clickthru="http://www.google.com/" data-image="http://placehold.it/1460x300"></div>',
                     
-                    header: '<div data-type="SwfStunt"></div>',
+                    header: '<div data-type="BaseUnit"></div>',
                     box: 'standard box ad html',
-                    stunt: '<div data-type="BaseUnit"></div>',
+                    stunt: '<div data-type="SwfStunt" data-image="http://placehold.id/800x600" \
+                            data-width="600" data-height="500" data-close="true"\
+                            data-swf="http://videos.theonion.com/ads/2014/02/5456900010000640_GetCovered_ActionFigures_300x250.swf"></div>',
                 }
             });
         </script>

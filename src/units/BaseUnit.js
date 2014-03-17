@@ -4,9 +4,10 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
+        this.defaults = {}
 
         this.constructor = function(loader, $slot, $iframe, options) {
-            this.options = options;
+            this.options = $.extend(this.defaults, options);
             this.loader = loader;
             this.$iframe = $iframe;
             this.$body = $("body", $iframe.contents()),
@@ -58,13 +59,14 @@
 
         this.destroy = function() {
             //any time and unit is destroyed, call the loader's run to get the next runlevel
-            $iframe.remove();
+            this.$slot.remove();
             this.loader.run();
         }
 
         this.firePixel = function (url) {
-            if (url) {
-                this.$body.append($("<img style=\"display:none\" src=\"" + $.trim(url) + "\">"));
+            if (url && window) {
+                var i = new Image();
+                i.src = (url);
             }
         }
 
