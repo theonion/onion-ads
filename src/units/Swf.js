@@ -6,18 +6,27 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.Swf = augment(Ads.units.BaseUnit, function(uber) {
-
-        this.constructor = function(loader, slot, iframe, options) {
-            uber.constructor(loader, slot, iframe, options);
+        this.constructor = function(loader, $slot, $iframe, options) {
+            uber.constructor.call(this, loader, $slot, $iframe, options);
         }
 
-        //options are DFP params
-        this.render = function() {
-
-        }
-
-        this.destroy = function() {
-
-        }
+        this.setMarkup = function($body) {
+            var element = $("div", $body)[0];
+            if (FlashReplace.checkForFlash(7)) {
+                FlashReplace.replace(element,
+                    this.options.swf + "?" + this.options.clickTagName + "=" +    escape(this.options.clickthru), "",
+                    this.options.width,
+                    this.options.height,
+                    7,
+                    {
+                    wmode : "transparent",
+                    quality: "high",
+                    allowScriptAccess: "always"
+                });
+            }
+            else {
+                $(element).append('<img src="' + this.options.staticImage + '"/>');
+            }
+        };
     })
 })(this.Ads)

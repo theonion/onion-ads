@@ -16,7 +16,6 @@
         this.init = function() {
             
             /* logic to choose loader goes here. */
-
             var loaderType = "DfpLoader";
 
             //Adbuilder link
@@ -38,8 +37,21 @@
             this.loader.load();
         }
 
-        this.addTargeting = function(name, value) {
-            targeting[name] = value;
+        /*  setSelector & setTargeting 
+
+            Use these guys for responsive stuff. You can externally define a resize listener
+            that updates the selector used to grab which ads are visible.
+
+        */
+
+        // Change selector used to find slots after Ads has been initiated
+        this.setSelector = function(selector) {
+            this.options.selector = selector
+        }
+
+        // Change targeting after Ads has been initialized. 
+        this.setTargeting = function(newTargeting) {
+            this.options.targeting = newTargeting;
         }
 
         this.refresh = function() {
