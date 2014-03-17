@@ -304,8 +304,9 @@
         }
 
         this.firePixel = function (url) {
-            if (url) {
-                this.$body.append($("<img style=\"display:none\" src=\"" + $.trim(url) + "\">"));
+            if (url && window) {
+                var i = new Image();
+                i.src = (url);
             }
         }
 
