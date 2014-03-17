@@ -19,6 +19,75 @@
         return constructor;
     }
 }));;/*
+
+    Ads is responsible for 
+    - handling external configuration
+    - selecting the appropriate loader
+    - defines the ads interface for external use, e.g. 
+
+*/
+
+;(function(global) {
+    "use strict";
+    var Ads = Ads || function(options) {
+        options.targeting = options.targeting || {};
+
+        // initialize 
+        this.init = function() {
+            
+            /* logic to choose loader goes here. */
+
+            var loaderType = "DfpLoader";
+
+            //Adbuilder link
+            var adHash = this.getParamByName("ad");
+
+            // check for "ad" param in querystirng, choose "JsonLoader"        
+            if (this.getParamByName("showslots")) {
+                loaderType = "BaseLoader";
+            }
+            else if (adHash !== "") {
+                options.url = "http://adops.onion.com/adbuilder/serve/?ad=" + adHash;
+                loaderType = "JsonLoader";
+            }
+            else if (typeof options.data !== "undefined") {
+                loaderType = "JsonLoader";
+            }
+
+            this.loader = new Ads[loaderType](options);
+            this.loader.load();
+        }
+
+        this.addTargeting = function(name, value) {
+            targeting[name] = value;
+        }
+
+        this.refresh = function() {
+            loader.refresh(targeting);
+        }
+
+        this.destroy = function() {
+            loader.destroy();
+        }
+
+        this.getParamByName = function(name){
+            name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+            var regexS = "[\\?&]" + name + "=([^&#]*)";
+            var regex = new RegExp(regexS);
+            var results = regex.exec(window.location.search);
+            if(results === null) {
+                return "";
+            }
+            else {
+                return decodeURIComponent(results[1].replace(/\+/g, " "));
+            }
+        }
+        
+        this.init();
+    }
+    global.Ads = Ads;
+    global.Ads.units = {};
+})(this);;/*
     Base for loader objects. If used directly, will only display placeholders.
 
     Defines a common interface for dealing with ads, regardless of where they come from.
@@ -33,11 +102,16 @@
         }
 
         this.getSlots = function() {
+            //TODO: make sure there aren't any duplicate slots
             return $(this.options.selector);
         }
 
         this.insertIframe = function(element, contents) {
             var iframe = document.createElement("iframe");
+
+            contents = "<!DOCTYPE html><html><head><meta charset=\"utf-8\">\
+                            <style>*{margin:0px; padding:0px; overflow: hidden;}</style>\
+                            </head><body>" + contents + "</body></html>".trim();
 
             if (!!("srcdoc" in document.createElement("iframe"))) { //check if srcdoc is implemented
                 $(iframe).attr("srcdoc", contents);
@@ -45,6 +119,7 @@
             else {
                 $(iframe).attr("src", "javascript: '" + contents.replace(/'/g, "\\'" ) + "'");
             }
+
             $(iframe)
                 .attr("marginwidth", 0)
                 .attr("marginheight", 0)
@@ -194,6 +269,8 @@
             if (!this.built) {
                 this.render();
                 this.built = true;
+                //fire a pixel
+                this.firePixel(this.options.pixel); //TODO: allow multiple values?
             }
         }
 
@@ -224,6 +301,23 @@
             //any time and unit is destroyed, call the loader's run to get the next runlevel
             $iframe.remove();
             this.loader.run();
+        }
+
+        this.firePixel = function (url) {
+            if (url) {
+                this.$body.append($("<img style=\"display:none\" src=\"" + $.trim(url) + "\">"));
+            }
+        }
+
+        this.utils = {
+            template: function(html, dict) {    
+                for (var k in dict) {
+                    if (k) {
+                        html = html.replace(new RegExp("{{" + k + "}}", 'g'), dict[k]);
+                    }
+                }
+                return html;
+            }
         }
     })
 })(self.Ads);;/*
@@ -275,34 +369,25 @@
     })
 })(self.Ads);;;;/*
    
-*/  
+*/      
 ;(function(Ads) {
     "use strict";
     Ads.units.Skin = augment(Ads.units.BaseUnit, function(uber) {
-        this.params = {
-            
-
-        }
-
-
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }
 
         this.setStyle = function($body) {
-            uber.setStyle.call(this, $body);
-            $body.css({
-                backgroundColor: "blue",
-                textAlign: "center",
-                color: "white"
-            });
+            this.resize(1460, 300);
         }
 
         this.setMarkup = function($body) {
-            $body.append("THIS IS A SKIN");
+            var html = this.utils.template(
+                '<a target="_blank" href="{{clickthru}}">\
+                    <img src="{{image}}">\
+                </a>', this.options );
+            $body.html(html);
         };
-
-
     })
 
 })(self.Ads);

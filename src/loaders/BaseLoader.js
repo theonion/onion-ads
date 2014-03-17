@@ -13,11 +13,16 @@
         }
 
         this.getSlots = function() {
+            //TODO: make sure there aren't any duplicate slots
             return $(this.options.selector);
         }
 
         this.insertIframe = function(element, contents) {
             var iframe = document.createElement("iframe");
+
+            contents = "<!DOCTYPE html><html><head><meta charset=\"utf-8\">\
+                            <style>*{margin:0px; padding:0px; overflow: hidden;}</style>\
+                            </head><body>" + contents + "</body></html>".trim();
 
             if (!!("srcdoc" in document.createElement("iframe"))) { //check if srcdoc is implemented
                 $(iframe).attr("srcdoc", contents);
@@ -25,6 +30,7 @@
             else {
                 $(iframe).attr("src", "javascript: '" + contents.replace(/'/g, "\\'" ) + "'");
             }
+
             $(iframe)
                 .attr("marginwidth", 0)
                 .attr("marginheight", 0)

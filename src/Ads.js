@@ -62,17 +62,6 @@
                 return decodeURIComponent(results[1].replace(/\+/g, " "));
             }
         }
-
-        this.utils = {
-            template: function(html, dict) {    
-                for (var k in dict) {
-                    if (k) {
-                        html = html.replace(new RegExp("{{" + k + "}}", 'g'), dict[k]);
-                    }
-                }
-                return html;
-            }
-        }
         
         this.init();
     }

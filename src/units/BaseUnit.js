@@ -28,6 +28,8 @@
             if (!this.built) {
                 this.render();
                 this.built = true;
+                //fire a pixel
+                this.firePixel(this.options.pixel); //TODO: allow multiple values?
             }
         }
 
@@ -58,6 +60,23 @@
             //any time and unit is destroyed, call the loader's run to get the next runlevel
             $iframe.remove();
             this.loader.run();
+        }
+
+        this.firePixel = function (url) {
+            if (url) {
+                this.$body.append($("<img style=\"display:none\" src=\"" + $.trim(url) + "\">"));
+            }
+        }
+
+        this.utils = {
+            template: function(html, dict) {    
+                for (var k in dict) {
+                    if (k) {
+                        html = html.replace(new RegExp("{{" + k + "}}", 'g'), dict[k]);
+                    }
+                }
+                return html;
+            }
         }
     })
 })(self.Ads);

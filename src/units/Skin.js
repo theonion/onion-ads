@@ -1,33 +1,24 @@
 /*
    
-*/  
+*/      
 ;(function(Ads) {
     "use strict";
     Ads.units.Skin = augment(Ads.units.BaseUnit, function(uber) {
-        this.params = {
-            
-
-        }
-
-
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }
 
         this.setStyle = function($body) {
-            uber.setStyle.call(this, $body);
-            $body.css({
-                backgroundColor: "blue",
-                textAlign: "center",
-                color: "white"
-            });
+            this.resize(1460, 300);
         }
 
         this.setMarkup = function($body) {
-            $body.append("THIS IS A SKIN");
+            var html = this.utils.template(
+                '<a target="_blank" href="{{clickthru}}">\
+                    <img src="{{image}}">\
+                </a>', this.options );
+            $body.html(html);
         };
-
-
     })
 
 })(self.Ads);
