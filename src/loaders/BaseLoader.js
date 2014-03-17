@@ -1,0 +1,96 @@
+/*
+    Base for loader objects. If used directly, will only display placeholders.
+
+    Defines a common interface for dealing with ads, regardless of where they come from.
+*/  
+;(function(Ads) {
+    "use strict";
+    Ads.BaseLoader = augment(Object, function() {
+        this.constructor = function(options) {
+            this.options = options;
+            this.slots = this.getSlots();
+            this.units = {};
+        }
+
+        this.getSlots = function() {
+            return $(this.options.selector);
+        }
+
+        this.insertIframe = function(element, contents) {
+            var iframe = document.createElement("iframe");
+
+            if (!!("srcdoc" in document.createElement("iframe"))) { //check if srcdoc is implemented
+                $(iframe).attr("srcdoc", contents);
+            }
+            else {
+                $(iframe).attr("src", "javascript: '" + contents.replace(/'/g, "\\'" ) + "'");
+            }
+            $(iframe)
+                .attr("marginwidth", 0)
+                .attr("marginheight", 0)
+                .attr("hspace", 0)
+                .attr("vspace", 0)
+                .attr("frameBorder", 0)
+                .attr("border", 0)
+                .attr("scrolling", "no")
+            element.appendChild(iframe);
+        }
+
+        /*  Load is normally the method used to fetch ads from a server.
+            In the case of the DefaultLoader, it just inserts iframes with the base unit.  */
+        this.load = function(targeting) {
+            console.log("Default Loader: loading");
+            for (var i=0; i < this.slots.length; i++) {
+                this.insertIframe(this.slots[i], "<div data-type=\"BaseUnit\"></div>");
+            }
+            setTimeout($.proxy(this.initializeUnits, this), 100);
+        }
+
+        /*  Goes through the iframes and kicks off units */
+
+        this.initializeUnits = function() {
+            var blocker = false;
+            for (var i=0; i < this.slots.length; i++) {
+                //look for an ad unit inside of the iframe
+                var iframe = $("iframe", this.slots[i]),
+                    slot = $(this.slots[i]),
+                    unitOptions = iframe.contents().find("[data-type]").data(),
+                    slotname = slot.attr("data-slotname");
+
+
+                if (typeof unitOptions === "undefined") {
+                    // No ad unit for this slot
+                }
+                else if (typeof Ads.units[unitOptions.type] === "undefined") {
+                    console.warn("Warning: " + unitOptions.type + " isn't defined.");
+                }
+                else {
+                    $("body").addClass("ad-" + slotname + "-" + unitOptions.type.toLowerCase() );
+
+                    this.units[slotname] = new Ads.units[unitOptions.type](this, slot, iframe, unitOptions);
+                    //maybe throw a warning if there is more than one blocker. Not really a thing that should be allowed.
+                    if (unitOptions.blocking) { 
+                        // got a blocker? build now. 
+                        this.units[slotname].build()
+                        blocker = true;
+                    } 
+                }
+                //TODO: afns-ad-element shit
+            }
+
+            // no blockers? go ahead and run. Otherwise, run is triggered upon destruction of the blocking ad.
+            if (!blocker) {
+                this.run();
+            }
+        }
+
+        this.run = function() {            
+            // build all ad units at current runlevel, then decrement
+            var slots = Object.keys(this.units);
+            for (var i = 0; i < slots.length; i++) {
+                this.units[slots[i]].build()
+            }
+        };
+
+    })
+})(this.Ads);

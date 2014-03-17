@@ -1,0 +1,45 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Ad Loading example</title>
+        <style>
+            .ad {
+                background-color:#4684EE;
+                border:1px #272822 solid;
+                margin: 20px;
+                position:relative;
+            }
+        </style>
+    </head>
+    <body>
+
+        <div class="ad" data-slotname="wallpaper" data-height="1" data-width="1" style="width: 1px; height: 1px"></div>
+
+        <div class="ad" data-slotname="header" data-height="90" data-width="728" style="width: 728px; height: 90px"></div>
+
+        <div class="ad" data-slotname="box" data-height="250" data-width="300" style="width: 300px; height: 250px"></div>
+
+        <div class="ad" data-slotname="stunt" data-height="1" data-width="1" style="width: 1px; height: 1px;"></div>
+
+
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+        <script src="../build/onion-ads.js"></script>
+        <script>
+            //Config sample. 
+
+            var ads = new Ads({
+                //options
+                selector: ".ad",
+                data: {
+                    wallpaper: '<div data-type="Skin"></div>',
+                    header: '<div data-type="SwfStunt"></div>',
+                    box: '<div data-type="BaseUnit"></div>',
+                    stunt: '<div data-type="BaseUnit"></div>',
+                }
+            });
+
+        </script>
+
+    </body>
+</html>
