@@ -6,6 +6,6 @@ describe("Initializes", function() {
             //options
             selector: ".ad",
         });
-        expect(typeof ads).toEqual("object");
+        expect(typeof ads).toBe("object");
     });
 });
