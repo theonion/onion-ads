@@ -14,17 +14,8 @@ module.exports = function(grunt) {
                 src: ['src/vendor/*.js', 
                     'src/Ads.js', 
 
-                    'src/loaders/BaseLoader.js',
-                    'src/loaders/DfpLoader.js',
-                    'src/loaders/JsonLoader.js',
-
-                    'src/units/BaseUnit.js', 
-                    'src/units/Swf.js',
-                    'src/units/SwfStunt.js',
-                    'src/units/SwfBanner.js',
-                    'src/units/Video.js',
-                    'src/units/VideoSkin.js',
-                    'src/units/Skin.js',
+                    'src/loaders/*.js',
+                    'src/units/*.js'
                     ],
                 dest: 'build/<%= pkg.name %>.js'
             }
