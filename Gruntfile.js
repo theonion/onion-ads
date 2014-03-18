@@ -1,5 +1,5 @@
 module.exports = function(grunt) {
-    var banner = '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
+    var banner = '/*! <%= pkg.name %> */\n',
         specs = "spec/*Spec.js",
         helpers = "spec/*Helpers.js";
 
