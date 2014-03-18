@@ -8,6 +8,7 @@ if (window.DMVAST) {
     "use strict";
     Ads.units.VideoUnit = augment(Ads.units.BaseUnit, function(uber) {
         this.constructor = function(loader, $slot, $iframe, options) {
+            uber.constructor.call(this, loader, $slot, $iframe, options);
             this.volume = options.volume || 0;
             this.top_right_icon = options.top_right_icon || "volume-up";
             this.video_tag_selector = this.slotName + "_video";
@@ -23,25 +24,23 @@ if (window.DMVAST) {
                 this.behavior = options.behavior;
             }
 
+            var video_unit = this;
             vast.client.get(options.vast_url, function(res) {
                 if (res) {
-                    this.setupVAST(res);
-                    this.data_loaded = true;
-                    this.loader.initializeUnits();
+                    video_unit.setupVAST(res);
+                    video_unit.data_loaded = true;
+                    if (video_unit.built) {
+                        video_unit.play(this.volume);
+                    }
                 }
             });
-            uber.constructor.call(this, loader, $slot, $iframe, options);
-        };
-
-        this.build = function() {
-            if (this.data_loaded) {
-                uber.build.call();
-            }
         };
 
         this.render = function() {
-            uber.render.call();
-            this.play(this.volume);
+            uber.render.call(this);
+            if (this.data_loaded) {
+                this.play(this.volume);
+            }
         }
 
         this.setStyle = function($body) {
@@ -54,6 +53,8 @@ if (window.DMVAST) {
                     "href": '#',
                     "target": "_blank"
                 });
+            console.log(this.video_tag)
+            this.video_anchor.append(this.video_tag);
             $body.append(this.video_anchor);
         };
 
@@ -76,7 +77,7 @@ if (window.DMVAST) {
             */
             var video_unit = this;
             if(videojs.players[this.video_tag_selector]) {
-                videojs(this.video_tag_selector).dispose();
+                this.player.dispose();
                 var videotag = createVideoTag(video_unit.slotName);
                 $(this.video_anchor).prepend(videotag);
             }
@@ -86,7 +87,9 @@ if (window.DMVAST) {
                 width: 'auto',
                 height: 'auto'
             };
-            videojs(this.video_tag_selector, videojs_options, function() {
+
+            var video_element = this.$body.find('#'+this.video_tag_selector)[0];
+            videojs(video_element, videojs_options, function() {
                 video_unit.player = this;
                 video_unit.player.on('canplay', function() {video_unit.vastTracker.load();});
                 video_unit.player.on('timeupdate', function() {
@@ -151,9 +154,9 @@ if (window.DMVAST) {
         };
 
         this.setSoundOn = function() {
-            videojs(this.video_tag_selector).currentTime(0);
-            videojs(this.video_tag_selector).volume(100);
-            videojs(this.video_tag_selector).play();
+            this.player.currentTime(0);
+            this.player.volume(100);
+            this.player.play();
             this.firePixel(this.video_sound_pixel_tracker);
             return false;
         };
@@ -174,8 +177,8 @@ if (window.DMVAST) {
         };
 
         this.destroy = function() {
-            videojs(this.video_tag_selector).dispose();
-            uber.destroy.call();
+            this.player.dispose();
+            uber.destroy.call(this);
         };
 
         this.end = function() {
@@ -192,7 +195,8 @@ if (window.DMVAST) {
                     this.poster_url +
                     "'>");
                 $("#" + this.video_tag_selector).append(img);
-        }
+            }
+        };
 
         this.setupVAST = function(data) {
             for (var adIdx = 0; adIdx < data.ads.length; adIdx++) {
