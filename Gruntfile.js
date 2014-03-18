@@ -19,6 +19,7 @@ module.exports = function(grunt) {
                     'src/loaders/JsonLoader.js',
 
                     'src/units/BaseUnit.js', 
+                    'src/units/External.js', 
                     'src/units/Swf.js',
                     'src/units/SwfStunt.js',
                     'src/units/SwfBanner.js',

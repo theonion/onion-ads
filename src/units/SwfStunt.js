@@ -7,7 +7,7 @@
         this.defaults = {
             width: 800,
             height: 600,
-            delay: 8,
+            delay: 4,
             blocking: true,
             clickTagName: "clickTag"
         }
