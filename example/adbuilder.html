@@ -37,35 +37,27 @@
         <script src="../build/onion-ads.js"></script>
         <script>
             //Config sample. 
+            var getParamByName = function(name){
+                name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+                var regexS = "[\\?&]" + name + "=([^&#]*)";
+                var regex = new RegExp(regexS);
+                var results = regex.exec(window.location.search);
+                if(results === null) {
+                    return "";
+                }
+                else {
+                    return decodeURIComponent(results[1].replace(/\+/g, " "));
+                }
+            }
 
+            if (getParamByName('ad') === "") {
+                console.log("please append '?ad=18ed48cb4c824a25d83c38aa881b50a711930c17d76120b9442706faddc3c677' to the url");
+            }
+            
             var ads = new Ads({
                 //options
                 selector: ".ad",
-                flashReplace: "http://www.theonion.com/static/ads/flashreplace.js",
-                data: [
-                    {
-                        slotname: 'wallpaper',
-                        value: '<div data-type="Skin" data-pixel="http://placehold.it/1x1" data-clickthru="http://www.google.com/" data-image="http://placehold.it/1460x300"></div>'
-                    },
-                    {
-                        slotname: 'header',
-                        value: '<div data-type="BaseUnit"></div>'
-                    },
-                    {
-                        slotname: 'box',
-                        value: 'standard box ad html'
-                    },
-                    {
-                        slotname: 'stunt',
-                        value: '<div data-type="SwfStunt" data-image="http://placehold.id/800x600" \
-                                                data-width="600" data-height="500" data-close="true"\
-                                                data-swf="http://videos.theonion.com/ads/2014/02/5456900010000640_GetCovered_ActionFigures_300x250.swf"></div>'
-                    },
-                    {
-                        slotname: 'wallpaper',
-                        value: '<div data-type="VideoUnit" data-vast_url="http://videoads.theonion.com/vast/176.xml"></div>'
-                    }
-                ]
+                flashReplace: "http://www.theonion.com/static/ads/flashreplace.js"
             });
         </script>
     </body>
