@@ -21,10 +21,19 @@
 
         <!-- Let's use to ad slots & try to get ads to load from DFP -->
         <div id="dfp-ad-header" class="ad" data-slotname="header" data-height="90" data-width="728" 
-            data-viewports="desktop,tablet-portrait" style="width: 728px; height: 90px"></div>
+            data-viewports="desktop" style="width: 728px; height: 90px"></div>
+
+        <div id="dfp-ad-header_mobile" class="ad" data-slotname="header_mobile" data-height="50" data-width="320" 
+            data-viewports="mobile" style="width: 320px; height: 50px"></div>
+
+        <div id="dfp-ad-header_320x50_primary" class="ad" data-slotname="320x50_primary" data-height="50" data-width="320" 
+            data-viewports="mobile" style="width: 320px; height: 50px"></div>
+
+        <div id="dfp-ad-stunt" class="ad" data-slotname="stunt" data-height="1" data-width="1" 
+            data-viewports="desktop" style="width: 1px; height: 1px"></div>
 
         <div id="dfp-ad-300x250_abovefold" class="ad" data-slotname="300x250_abovefold" data-height="250" data-width="300" 
-            data-viewports="desktop,tablet-portrait" style="width: 300px; height: 250px"></div>
+            data-viewports="desktop,mobile" style="width: 300px; height: 250px"></div>
 
 
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
@@ -32,12 +41,19 @@
         <script src="../build/onion-ads.js"></script>
         <script>
             //Config sample. 
+            var targeting = {dfp_site:"ad_test", dfp_viewport: "desktop"};
+            var selector = "[data-viewports*=desktop].ad, [data-viewports=all].ad";
             var ads = new Ads({
                 //options
-                selector: "[data-viewports*=desktop].ad",
-                targeting: {dfp_site:"theonion"},
+                selector: selector,
+                targeting: targeting,
                 dfpNetworkCode: "1009948"
             });
+
+            // can we kill dfp_viewport and drive everything off of a selector?
+            function update(selector, targeting) {
+                ads.reload();
+            }
         </script>
     </body>
 </html>

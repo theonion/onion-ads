@@ -10,10 +10,9 @@
 ;(function(global) {
     "use strict";
     var Ads = Ads || function(options) {
-        options.targeting = options.targeting || {};
-
+        this.options = options;
         // initialize 
-        this.init = function() {
+        this.init = function(options) {
             
             /* logic to choose loader goes here. */
             var loaderType = "DfpLoader";
@@ -32,34 +31,28 @@
             else if (typeof options.data !== "undefined") {
                 loaderType = "JsonLoader";
             }
-
             this.loader = new Ads[loaderType](options);
+            console.log("calling loader again");
+            console.log(this.loader);
             this.loader.load();
         }
 
-        /*  setSelector & setTargeting 
 
-            Use these guys for responsive stuff. You can externally define a resize listener
-            that updates the selector used to grab which ads are visible.
-
-        */
-
-        // Change selector used to find slots after Ads has been initiated
-        this.setSelector = function(selector) {
-            this.options.selector = selector
-        }
-
-        // Change targeting after Ads has been initialized. 
-        this.setTargeting = function(newTargeting) {
-            this.options.targeting = newTargeting;
+        //reload is pretty aggressive... tears the loader down and builds it back up.
+        this.reload = function(options) {
+            if (typeof options !== "undefined") {
+                this.options = $.extend(this.options, options);
+            }
+            this.loader.destroy();
+            this.init(this.options);
         }
 
         this.refresh = function() {
-            loader.refresh(targeting);
+            this.loader.refresh(targeting);
         }
 
         this.destroy = function() {
-            loader.destroy();
+            this.loader.destroy();
         }
 
         this.getParamByName = function(name){
@@ -75,7 +68,7 @@
             }
         }
         
-        this.init();
+        this.init(options);
     }
     global.Ads = Ads;
     global.Ads.units = {};

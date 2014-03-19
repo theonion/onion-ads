@@ -106,8 +106,11 @@
             for (var i = 0; i < slots.length; i++) {
                 this.units[slots[i]].destroy()
             }
+            // blow out all the slot contents
+            $(this.options.selector).children().remove();
 
-            //TODO: remove all classnames from body that begin with "ad-"
+            //remove all classnames from body that begin with "ad-"
+            document.body.className = document.body.className.replace(/ad-\S+/g, "").trim()
         }
 
     })

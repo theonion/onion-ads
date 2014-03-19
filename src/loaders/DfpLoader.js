@@ -82,7 +82,7 @@
             "google_prev_ad_slotnames_by_region", "google_num_slots_by_channel", "google_viewed_host_channels",
             "google_num_slot_to_show", "gaGlobal", "google_persistent_state", "google_onload_fired"];
 
-            uber.destroy.call(this, options);
+            uber.destroy.call(this);
 
             $("#dfp_script").remove();
             for (var i=0;i<dfp_junk.length;i++) delete window[dfp_junk[i]];
