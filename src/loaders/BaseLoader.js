@@ -2,7 +2,7 @@
     Base for loader objects. If used directly, will only display placeholders.
 
     Defines a common interface for dealing with ads, regardless of where they come from.
-*/  
+*/
 ;(function(Ads) {
     "use strict";
     Ads.BaseLoader = augment(Object, function() {
@@ -13,8 +13,18 @@
         }
 
         this.getSlots = function() {
-            //TODO: make sure there aren't any duplicate slots
-            return $(this.options.selector);
+            var slots = $(this.options.selector),
+                temp = {};
+            for (var i = 0; i < slots.length; i++) {
+                var slotname = $(slots[i]).attr("data-slotname");
+                if (temp[slotname]) {
+                    console.log("Slotname: " + slotname + " has a duplicate");
+                    continue;
+                } else {
+                    temp[slotname] = slots[i];
+                }
+            }
+            return $.map(temp, function(el, index) {return el});
         }
 
         this.insertIframe = function(element, contents) {
