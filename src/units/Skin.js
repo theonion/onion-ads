@@ -6,6 +6,9 @@
     Ads.units.Skin = augment(Ads.units.BaseUnit, function(uber) {
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
+            if (this.options.runImmediately) {
+                this.render();
+            }
         }
 
         this.setStyle = function($body) {

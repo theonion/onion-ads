@@ -87,10 +87,9 @@ var FlashReplace = {
 ;(function(global) {
     "use strict";
     var Ads = Ads || function(options) {
-        options.targeting = options.targeting || {};
-
+        this.options = options;
         // initialize 
-        this.init = function() {
+        this.init = function(options) {
             
             /* logic to choose loader goes here. */
             var loaderType = "DfpLoader";
@@ -109,34 +108,26 @@ var FlashReplace = {
             else if (typeof options.data !== "undefined") {
                 loaderType = "JsonLoader";
             }
-
             this.loader = new Ads[loaderType](options);
             this.loader.load();
         }
 
-        /*  setSelector & setTargeting 
 
-            Use these guys for responsive stuff. You can externally define a resize listener
-            that updates the selector used to grab which ads are visible.
-
-        */
-
-        // Change selector used to find slots after Ads has been initiated
-        this.setSelector = function(selector) {
-            this.options.selector = selector
-        }
-
-        // Change targeting after Ads has been initialized. 
-        this.setTargeting = function(newTargeting) {
-            this.options.targeting = newTargeting;
+        //reload is pretty aggressive... tears the loader down and builds it back up.
+        this.reload = function(options) {
+            if (typeof options !== "undefined") {
+                this.options = $.extend(this.options, options);
+            }
+            this.loader.destroy();
+            this.init(this.options);
         }
 
         this.refresh = function() {
-            loader.refresh(targeting);
+            this.loader.refresh(targeting);
         }
 
         this.destroy = function() {
-            loader.destroy();
+            this.loader.destroy();
         }
 
         this.getParamByName = function(name){
@@ -152,7 +143,7 @@ var FlashReplace = {
             }
         }
         
-        this.init();
+        this.init(options);
     }
     global.Ads = Ads;
     global.Ads.units = {};
@@ -176,7 +167,7 @@ var FlashReplace = {
             for (var i = 0; i < slots.length; i++) {
                 var slotname = $(slots[i]).attr("data-slotname");
                 if (temp[slotname]) {
-                    console.log("Slotname: " + slotname + " has a duplicate");
+                    console.warn("Slotname: " + slotname + " has a duplicate");
                     continue;
                 } else {
                     temp[slotname] = slots[i];
@@ -274,8 +265,11 @@ var FlashReplace = {
             for (var i = 0; i < slots.length; i++) {
                 this.units[slots[i]].destroy()
             }
+            // blow out all the slot contents
+            $(this.options.selector).children().remove();
 
-            //TODO: remove all classnames from body that begin with "ad-"
+            //remove all classnames from body that begin with "ad-"
+            document.body.className = document.body.className.replace(/ad-\S+/g, "").trim()
         }
 
     })
@@ -283,20 +277,19 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.DfpLoader = augment(Ads.BaseLoader, function(uber) {
+
         this.constructor = function(options) {
             uber.constructor.call(this, options);
             this.activeAds = {}
         }
 
         this.refresh = function() {
-            /* var web_ads = [];
-            self.ad_units.demolish();
-            $(self.visible_ads).each(function(i){
+            
+            $(self.activeAds).each(function(i){
                 var slot_name = this.id.replace("dfp-ad-", "");
-                web_ads.push(self.active_list[slot_name]);
+                ads.push(self.activeAds[slot_name]);
             });
             googletag.pubads().refresh(web_ads);
-            */
         }
         
         this.load = function() {
@@ -306,10 +299,8 @@ var FlashReplace = {
             (function() {
                 var gads = document.createElement("script");
                 gads.async = true;
-                gads.type = "text/javascript";
                 gads.id = "dfp_script";
-                var useSSL = "https:" == document.location.protocol;
-                gads.src = "http://www.googletagservices.com/tag/js/gpt.js";
+                gads.src = "//www.googletagservices.com/tag/js/gpt.js";
                 var node = document.getElementsByTagName("script")[0];
                 node.parentNode.insertBefore(gads, node);
             })();
@@ -363,7 +354,7 @@ var FlashReplace = {
             "google_prev_ad_slotnames_by_region", "google_num_slots_by_channel", "google_viewed_host_channels",
             "google_num_slot_to_show", "gaGlobal", "google_persistent_state", "google_onload_fired"];
 
-            uber.destroy.call(this, options);
+            uber.destroy.call(this);
 
             $("#dfp_script").remove();
             for (var i=0;i<dfp_junk.length;i++) delete window[dfp_junk[i]];
@@ -431,7 +422,9 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
-        this.defaults = {}
+        this.defaults = {
+            pixel: "",
+        }
 
         this.constructor = function(loader, $slot, $iframe, options) {
             this.options = $.extend(this.defaults, options);
@@ -442,6 +435,7 @@ var FlashReplace = {
             this.slotName = $slot.attr("data-slotname"),
             this.built = false;
             this.resize($slot.data("width"), $slot.data("height"));
+            this.originalSize = {width: $slot.data("width"), height: $slot.data("height")}
         }
 
         this.resize = function(w, h) {
@@ -486,7 +480,13 @@ var FlashReplace = {
 
         this.destroy = function() {
             //any time and unit is destroyed, call the loader's run to get the next runlevel
-            this.$slot.remove();
+            $(this.$slot)
+                .attr({"style": ""})
+                .children().remove();
+
+            $(this.$slot)
+                 .css(this.originalSize);
+
             this.loader.run();
         }
 
@@ -536,6 +536,9 @@ var FlashReplace = {
     Ads.units.Skin = augment(Ads.units.BaseUnit, function(uber) {
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
+            if (this.options.runImmediately) {
+                this.render();
+            }
         }
 
         this.setStyle = function($body) {
@@ -559,8 +562,19 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.Swf = augment(Ads.units.BaseUnit, function(uber) {
+        this.defaults = {
+            clickTagName : "clickTag",
+            width: 300,
+            height: 250,
+            clickthru: "#",
+            image:""
+        }
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
+            this.options = $.extend(this.options, this.defaults);
+            //drop in placeholder
+            var element = $("div", this.$body)[0];
+            $("<img src='" + this.options.image + "'>").appendTo(element);
         }
 
         this.setMarkup = function($body) {
@@ -581,6 +595,8 @@ var FlashReplace = {
                 $(element).append('<img src="' + this.options.staticImage + '"/>');
             }
         };
+
+        this.setStyle = function() {}
     })
 })(this.Ads);/*
    

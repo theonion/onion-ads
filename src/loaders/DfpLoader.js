@@ -2,20 +2,19 @@
 ;(function(Ads) {
     "use strict";
     Ads.DfpLoader = augment(Ads.BaseLoader, function(uber) {
+
         this.constructor = function(options) {
             uber.constructor.call(this, options);
             this.activeAds = {}
         }
 
         this.refresh = function() {
-            /* var web_ads = [];
-            self.ad_units.demolish();
-            $(self.visible_ads).each(function(i){
+            
+            $(self.activeAds).each(function(i){
                 var slot_name = this.id.replace("dfp-ad-", "");
-                web_ads.push(self.active_list[slot_name]);
+                ads.push(self.activeAds[slot_name]);
             });
             googletag.pubads().refresh(web_ads);
-            */
         }
         
         this.load = function() {
@@ -25,10 +24,8 @@
             (function() {
                 var gads = document.createElement("script");
                 gads.async = true;
-                gads.type = "text/javascript";
                 gads.id = "dfp_script";
-                var useSSL = "https:" == document.location.protocol;
-                gads.src = "http://www.googletagservices.com/tag/js/gpt.js";
+                gads.src = "//www.googletagservices.com/tag/js/gpt.js";
                 var node = document.getElementsByTagName("script")[0];
                 node.parentNode.insertBefore(gads, node);
             })();
@@ -82,7 +79,7 @@
             "google_prev_ad_slotnames_by_region", "google_num_slots_by_channel", "google_viewed_host_channels",
             "google_num_slot_to_show", "gaGlobal", "google_persistent_state", "google_onload_fired"];
 
-            uber.destroy.call(this, options);
+            uber.destroy.call(this);
 
             $("#dfp_script").remove();
             for (var i=0;i<dfp_junk.length;i++) delete window[dfp_junk[i]];

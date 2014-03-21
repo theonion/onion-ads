@@ -4,7 +4,9 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
-        this.defaults = {}
+        this.defaults = {
+            pixel: "",
+        }
 
         this.constructor = function(loader, $slot, $iframe, options) {
             this.options = $.extend(this.defaults, options);
@@ -15,6 +17,7 @@
             this.slotName = $slot.attr("data-slotname"),
             this.built = false;
             this.resize($slot.data("width"), $slot.data("height"));
+            this.originalSize = {width: $slot.data("width"), height: $slot.data("height")}
         }
 
         this.resize = function(w, h) {
@@ -59,7 +62,13 @@
 
         this.destroy = function() {
             //any time and unit is destroyed, call the loader's run to get the next runlevel
-            this.$slot.remove();
+            $(this.$slot)
+                .attr({"style": ""})
+                .children().remove();
+
+            $(this.$slot)
+                 .css(this.originalSize);
+
             this.loader.run();
         }
 
