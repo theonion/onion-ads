@@ -16,7 +16,15 @@
         }
         this.load = function() {
             if (this.options.url) {
-                //TODO: load via JSONP
+                var self = this;
+                $.ajax({
+                    url: this.options.url,
+                    dataType: 'jsonp',
+                    success: function(data) {
+                        self.data = $.parseJSON(data);
+                        self.onDataReady();
+                    }
+                });
             }
             else if  (typeof this.options.data === "object") {
                 this.data = this.options.data;
@@ -35,7 +43,12 @@
         this.onDataReady = function() {
             for (var i=0; i < this.slots.length; i++) {
                 var slotname = $(this.slots[i]).data("slotname");
-                this.insertIframe(this.slots[i], this.options.data[slotname]);
+                for (var j=0; j < this.data.length; j++) {
+                    if (this.data[j].slotname === slotname) {
+                        this.insertIframe(this.slots[i], this.data[j].value);
+                        break;
+                    }
+                }
             }
             setTimeout($.proxy(this.initializeUnits, this), 100);
         }

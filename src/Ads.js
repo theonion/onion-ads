@@ -32,8 +32,6 @@
                 loaderType = "JsonLoader";
             }
             this.loader = new Ads[loaderType](options);
-            console.log("calling loader again");
-            console.log(this.loader);
             this.loader.load();
         }
 

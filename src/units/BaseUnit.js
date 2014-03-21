@@ -4,7 +4,9 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
-        this.defaults = {}
+        this.defaults = {
+            pixel: "",
+        }
 
         this.constructor = function(loader, $slot, $iframe, options) {
             this.options = $.extend(this.defaults, options);

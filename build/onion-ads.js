@@ -1,4 +1,4 @@
-/*! onion-ads 2014-03-19 */
+/*! onion-ads */
 (function (global, factory) {
     if (typeof define === "function" && define.amd) define(factory);
     else if (typeof module === "object") module.exports = factory();
@@ -109,8 +109,6 @@ var FlashReplace = {
                 loaderType = "JsonLoader";
             }
             this.loader = new Ads[loaderType](options);
-            console.log("calling loader again");
-            console.log(this.loader);
             this.loader.load();
         }
 
@@ -153,7 +151,7 @@ var FlashReplace = {
     Base for loader objects. If used directly, will only display placeholders.
 
     Defines a common interface for dealing with ads, regardless of where they come from.
-*/  
+*/
 ;(function(Ads) {
     "use strict";
     Ads.BaseLoader = augment(Object, function() {
@@ -164,8 +162,18 @@ var FlashReplace = {
         }
 
         this.getSlots = function() {
-            //TODO: make sure there aren't any duplicate slots
-            return $(this.options.selector);
+            var slots = $(this.options.selector),
+                temp = {};
+            for (var i = 0; i < slots.length; i++) {
+                var slotname = $(slots[i]).attr("data-slotname");
+                if (temp[slotname]) {
+                    console.warn("Slotname: " + slotname + " has a duplicate");
+                    continue;
+                } else {
+                    temp[slotname] = slots[i];
+                }
+            }
+            return $.map(temp, function(el, index) {return el});
         }
 
         this.insertIframe = function(element, contents) {
@@ -269,20 +277,19 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.DfpLoader = augment(Ads.BaseLoader, function(uber) {
+
         this.constructor = function(options) {
             uber.constructor.call(this, options);
             this.activeAds = {}
         }
 
         this.refresh = function() {
-            /* var web_ads = [];
-            self.ad_units.demolish();
-            $(self.visible_ads).each(function(i){
+            
+            $(self.activeAds).each(function(i){
                 var slot_name = this.id.replace("dfp-ad-", "");
-                web_ads.push(self.active_list[slot_name]);
+                ads.push(self.activeAds[slot_name]);
             });
             googletag.pubads().refresh(web_ads);
-            */
         }
         
         this.load = function() {
@@ -292,10 +299,8 @@ var FlashReplace = {
             (function() {
                 var gads = document.createElement("script");
                 gads.async = true;
-                gads.type = "text/javascript";
                 gads.id = "dfp_script";
-                var useSSL = "https:" == document.location.protocol;
-                gads.src = "http://www.googletagservices.com/tag/js/gpt.js";
+                gads.src = "//www.googletagservices.com/tag/js/gpt.js";
                 var node = document.getElementsByTagName("script")[0];
                 node.parentNode.insertBefore(gads, node);
             })();
@@ -374,7 +379,15 @@ var FlashReplace = {
         }
         this.load = function() {
             if (this.options.url) {
-                //TODO: load via JSONP
+                var self = this;
+                $.ajax({
+                    url: this.options.url,
+                    dataType: 'jsonp',
+                    success: function(data) {
+                        self.data = $.parseJSON(data);
+                        self.onDataReady();
+                    }
+                });
             }
             else if  (typeof this.options.data === "object") {
                 this.data = this.options.data;
@@ -393,7 +406,12 @@ var FlashReplace = {
         this.onDataReady = function() {
             for (var i=0; i < this.slots.length; i++) {
                 var slotname = $(this.slots[i]).data("slotname");
-                this.insertIframe(this.slots[i], this.options.data[slotname]);
+                for (var j=0; j < this.data.length; j++) {
+                    if (this.data[j].slotname === slotname) {
+                        this.insertIframe(this.slots[i], this.data[j].value);
+                        break;
+                    }
+                }
             }
             setTimeout($.proxy(this.initializeUnits, this), 100);
         }
@@ -404,7 +422,9 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
-        this.defaults = {}
+        this.defaults = {
+            pixel: "",
+        }
 
         this.constructor = function(loader, $slot, $iframe, options) {
             this.options = $.extend(this.defaults, options);
@@ -489,6 +509,32 @@ var FlashReplace = {
         }
     })
 })(self.Ads);;/*
+   
+*/      
+;(function(Ads) {
+    "use strict";
+    Ads.units.Skin = augment(Ads.units.BaseUnit, function(uber) {
+        this.constructor = function(loader, $slot, $iframe, options) {
+            uber.constructor.call(this, loader, $slot, $iframe, options);
+            if (this.options.runImmediately) {
+                this.render();
+            }
+        }
+
+        this.setStyle = function($body) {
+            this.resize(1460, 300);
+        }
+
+        this.setMarkup = function($body) {
+            var html = this.utils.template(
+                '<a target="_blank" href="{{clickthru}}">\
+                    <img src="{{image}}">\
+                </a>', this.options );
+            $body.html(html);
+        };
+    })
+
+})(self.Ads);;/*
     Base for loader objects. If used directly, will only display placeholders.
 
     Defines a common interface for dealing with ads, regardless of where they come from.
@@ -496,8 +542,19 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.Swf = augment(Ads.units.BaseUnit, function(uber) {
+        this.defaults = {
+            clickTagName : "clickTag",
+            width: 300,
+            height: 250,
+            clickthru: "#",
+            image:""
+        }
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
+            this.options = $.extend(this.options, this.defaults);
+            //drop in placeholder
+            var element = $("div", this.$body)[0];
+            $("<img src='" + this.options.image + "'>").appendTo(element);
         }
 
         this.setMarkup = function($body) {
@@ -518,6 +575,8 @@ var FlashReplace = {
                 $(element).append('<img src="' + this.options.staticImage + '"/>');
             }
         };
+
+        this.setStyle = function() {}
     })
 })(this.Ads);/*
    
@@ -548,27 +607,253 @@ var FlashReplace = {
             setTimeout($.proxy(this.destroy, this), this.options.delay * 1000);
         }
     })
-})(self.Ads);;;;/*
+})(self.Ads);;;/*
    
 */      
-;(function(Ads) {
+;
+if (window.DMVAST) {
+
+(function(Ads, vast) {
     "use strict";
-    Ads.units.Skin = augment(Ads.units.BaseUnit, function(uber) {
+    Ads.units.VideoUnit = augment(Ads.units.BaseUnit, function(uber) {
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
+            this.volume = options.volume || 0;
+            this.top_right_icon = options.top_right_icon || "volume-up";
+            this.video_tag_selector = this.slotName + "_video";
+            this.video_tag = this.createVideoTag(this.slotName);
+            this.poster_url = options.poster_url;
+            this.video_sound_pixel_tracker = options.video_sound_pixel_tracker;
+            this.video_expand_pixel_tracker = options.video_expand_pixel_tracker;
+
+            // this is so dumb
+            var behaviors = {"enlarge":0, "soundOn": 0};
+            this.behavior = behaviors[options.behavior];
+            if (behaviors[options.behavior]) {
+                this.behavior = options.behavior;
+            }
+
+            var video_unit = this;
+            vast.client.get(options.vast_url, function(res) {
+                if (res) {
+                    video_unit.setupVAST(res);
+                    video_unit.data_loaded = true;
+                    if (video_unit.built) {
+                        video_unit.play(this.volume);
+                    }
+                }
+            });
+        };
+
+        this.render = function() {
+            uber.render.call(this);
+            if (this.data_loaded) {
+                this.play(this.volume);
+            }
         }
 
         this.setStyle = function($body) {
-            this.resize(1460, 300);
-        }
+
+        };
 
         this.setMarkup = function($body) {
-            var html = this.utils.template(
-                '<a target="_blank" href="{{clickthru}}">\
-                    <img src="{{image}}">\
-                </a>', this.options );
-            $body.html(html);
+            this.video_anchor = $("<a>")
+                .attr({
+                    "href": '#',
+                    "target": "_blank"
+                });
+            console.log(this.video_tag)
+            this.video_anchor.append(this.video_tag);
+            $body.append(this.video_anchor);
+        };
+
+        this.createVideoTag = function (name) {
+            return $('<video>')
+                .attr('id', name + '_video')
+                .addClass('video-js vjs-default-skin ad-' + name);
+        };
+
+        this.play = function() {
+            /*
+            some notes on video.js and vast
+              - in some browsers, you can't reuse the video player instantiated by videojs
+                as in functions like enlarge player. to get around this, video play completely
+                destroys the video container, creates a new one, and instantiates a new player
+              - in some browsers, timeUpdate can satisfy certain timing conditions multiple times.
+                (eg safari triggers VAST.play twice. there could be others!)
+            to prevent this, timing conditions uses .one which fires events only once
+              - blah blah blah
+            */
+            var video_unit = this;
+            if(videojs.players[this.video_tag_selector]) {
+                this.player.dispose();
+                var videotag = createVideoTag(video_unit.slotName);
+                $(this.video_anchor).prepend(videotag);
+            }
+            var videojs_options = {
+                preload: true,
+                controls: false,
+                width: 'auto',
+                height: 'auto'
+            };
+
+            var video_element = this.$body.find('#'+this.video_tag_selector)[0];
+            videojs(video_element, videojs_options, function() {
+                video_unit.player = this;
+                video_unit.player.on('canplay', function() {video_unit.vastTracker.load();});
+                video_unit.player.on('timeupdate', function() {
+                    if (isNaN(video_unit.vastTracker.assetDuration)) {
+                        video_unit.vastTracker.assetDuration = video_unit.player.duration();
+                    };
+                    video_unit.vastTracker.setProgress(video_unit.player.currentTime());
+                });
+                video_unit.player.on('play', function() {video_unit.vastTracker.setPaused(false);});
+                video_unit.player.on('pause', function() {video_unit.vastTracker.setPaused(true);});
+                video_unit.startPlayer(this, video_unit.volume);
+            });
+        };
+
+        this.startPlayer = function(player, volume) {
+            try {
+                player.controlBar.el().parentNode.removeChild(player.controlBar.el());
+                player.loadingSpinner.el().parentNode.removeChild(player.loadingSpinner.el());
+            } catch(e) {}
+
+            //add whatever icons, do unit-specific behavior, etc
+            if (this.behavior) this[this.behavior]();
+
+            player.prevTime = 0;
+            player.src(this.sources);
+            player.volume(volume);
+            player.play();
+        };
+
+
+        this.enlarge = function() {
+            //video player with enlarge button during play, repeat button on end
+            this.player.on('ended', $.proxy(this.end, this));
+            var container = $("#" + this.video_tag_selector);
+            var current_icon = this.current_icon || this.opt.top_right_icon;
+            var top_right_icon = $("<i class='fa fa-" + current_icon + "'></i>");
+            container.append(top_right_icon);
+            container.on('click', 'i.fa-' + this.top_right_icon, $.proxy(this.enlargePlayer, this));
+            container.on('click', 'i.fa-compress', $.proxy(this.minimize, this));
+            container.on('click', 'i.fa-repeat', $.proxy(this.repeat, this));
+        };
+
+        this.enlargePlayer = function() {
+            this.current_icon = 'compress';
+            $("#" + this.video_tag_selector).find("i")
+                .removeClass()
+                .addClass('fa fa-compress');
+            $(document).keyup(function(e){if (e.which == 27) { 
+                $.proxy(this.minimize, this);
+            }});
+            $("#" + this.video_tag_selector).parent().addClass('enlarged');
+            this.play(1);
+            this.firePixel(this.video_expand_pixel_tracker);
+            return false;
+        };
+
+        this.soundOn = function() {
+            var container = $("#" + this.video_tag_selector);
+            var enlargeicon = $("<i class='fa fa-volume-up'></i>");
+            container.append(enlargeicon);
+            container.on('click', 'i.fa-volume-up', $.proxy(this.setSoundOn, this));
+        };
+
+        this.setSoundOn = function() {
+            this.player.currentTime(0);
+            this.player.volume(100);
+            this.player.play();
+            this.firePixel(this.video_sound_pixel_tracker);
+            return false;
+        };
+
+        this.repeat = function() {
+            $("#" + this.video_tag_selector).find("img.poster").remove();
+            return this.enlargePlayer();
+        };
+
+        this.minimize = function() {
+            $("#" + this.video_tag_selector).parent().removeClass('enlarged');
+            this.play(0);
+            $("#" + this.video_tag_selector).find("i")
+                .removeClass()
+                .addClass('fa fa-' + this.top_right_icon);
+            $(document).off("keyup");
+            return false;
+        };
+
+        this.destroy = function() {
+            this.player.dispose();
+            uber.destroy.call(this);
+        };
+
+        this.end = function() {
+            $("#" + this.video_tag_selector + " img").remove();
+            $("#" + this.video_tag_selector).parent().removeClass('enlarged');
+            $("#" + this.video_tag_selector).find("i")
+                .removeClass()
+                .addClass('fa fa-repeat');
+            if(this.poster_url){
+                var img = $(
+                    "<img class='afns-ad-element afns-ad-" +
+                    this.slotName +
+                    "_poster poster' src='" +
+                    this.poster_url +
+                    "'>");
+                $("#" + this.video_tag_selector).append(img);
+            }
+        };
+
+        this.setupVAST = function(data) {
+            for (var adIdx = 0; adIdx < data.ads.length; adIdx++) {
+                var ad = data.ads[adIdx];
+                for (var creaIdx = 0; creaIdx < ad.creatives.length; creaIdx++) {
+                    var linearCreative = ad.creatives[creaIdx];
+                    if (linearCreative.type !== "linear") continue;
+                  
+                    if (linearCreative.mediaFiles.length) {
+                        this.sources = $.map(linearCreative.mediaFiles, function(f) {
+                            return {'type': f.mimeType, 'src': f.fileURL};
+                        });
+                        this.vastTracker = new vast.tracker(ad, linearCreative);
+
+                        var clickthrough;
+                        if (this.vastTracker.clickThroughURLTemplate) {
+                          clickthrough = vast.util.resolveURLTemplates(
+                            [this.vastTracker.clickThroughURLTemplate],
+                            {
+                                CACHEBUSTER: Math.round(Math.random() * 1.0e+10),
+                                CONTENTPLAYHEAD: this.vastTracker.progressFormated()
+                            }
+                          )[0];              
+                        }
+                        clickthrough = clickthrough || "#";
+
+                        $(this.video_anchor)
+                            .attr("href", clickthrough)
+                            .click(function(){
+                                var clicktrackers = this.vastTracker.clickTrackingURLTemplate;
+                                if (clicktrackers) {
+                                    this.vastTracker.trackURLs(clicktrackers);
+                                }
+                            });
+
+                        break;
+                    }
+                }
+                if (this.vastTracker) {
+                    break;
+                } else {
+                    // Inform ad server we can't find suitable media file for this ad
+                    vast.util.track(ad.errorURLTemplates, {ERRORCODE: 403});
+                }
+            }
         };
     })
 
-})(self.Ads);
+})(self.Ads, DMVAST);
+
+}
