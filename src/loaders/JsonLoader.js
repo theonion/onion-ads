@@ -41,7 +41,6 @@
         }
 
         this.onDataReady = function() {
-            console.log(this.data);
             for (var i=0; i < this.slots.length; i++) {
                 var slotname = $(this.slots[i]).data("slotname");
                 for (var j=0; j < this.data.length; j++) {
