@@ -432,13 +432,8 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
-        this.defaults = {
-            pixel: "",
-            clickthru:""
-        }
-
         this.constructor = function(loader, $slot, $iframe, options) {
-            this.options = $.extend(this.defaults, options);
+            this.options = $.extend({}, this.getDefaults(), options);
             this.loader = loader;
             this.$iframe = $iframe;
             this.$body = $("body", $iframe.contents()),
@@ -448,6 +443,17 @@ var FlashReplace = {
             this.resize($slot.data("width"), $slot.data("height"));
             this.originalSize = {width: $slot.data("width"), height: $slot.data("height")}
         }
+
+        this.getDefaults = function() {
+            var defaults = {};
+            for (var k in this.constructor.defaults) {
+                if (k) {
+                    defaults[k] = this.constructor.defaults[k];
+                }
+            }
+            return defaults;
+        }
+
 
         this.resize = function(w, h) {
             this.$iframe.width(w);
@@ -538,7 +544,12 @@ var FlashReplace = {
                 return style;
             }
         }
-    })
+    });
+
+    Ads.units.BaseUnit.defaults = {
+        pixel: {"type":"pixel", "default":""},
+        clickthru: {"type":"url", "default": ""}
+    };
 })(self.Ads);;/*
     Standard skin
 
@@ -570,7 +581,9 @@ var FlashReplace = {
             $body.html(html);
         };
     })
-
+    Ads.units.BaseUnit.defaults = {
+        image: {"type":"image", "default":""}
+    };
 })(self.Ads);;/*
     
     SWF Unit
@@ -588,16 +601,10 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.Swf = augment(Ads.units.BaseUnit, function(uber) {
-        this.defaults = {
-            clickTagName : "clickTag",
-            width: 300,
-            height: 250,
-            clickthru: "#",
-            image:""
-        }
+
+        
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
-            this.options = $.extend(this.options, this.defaults);
             //drop in placeholder
             var element = $("div", this.$body)[0];
             $("<img src='" + this.options.image + "'>").appendTo(element);
@@ -623,7 +630,16 @@ var FlashReplace = {
         };
 
         this.setStyle = function() {}
-    })
+    });
+
+    Ads.units.Swf.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
+        clickTagName: {"type": "text", "default":"clickTag"},
+        width: {"type": "number", "default": 300},
+        height: {"type": "number", "default": 250},
+        clickthru: {"type": "url", "default": ""},
+        image: {"type": "image", "default": ""}
+    });
+
 })(this.Ads);/*
 
     Swf Stunt 
@@ -644,13 +660,7 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.SwfStunt = augment(Ads.units.Swf, function(uber) {
-        this.defaults = {
-            width: 800,
-            height: 600,
-            duration: 8,
-            blocking: true,
-            clickTagName: "clickTag"
-        }
+        
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }
@@ -666,7 +676,15 @@ var FlashReplace = {
             this.resize(this.options.width, this.options.height);
             setTimeout($.proxy(this.destroy, this), this.options.duration * 1000);
         }
-    })
+    });
+
+    Ads.units.SwfStunt.defaults = $.extend({}, Ads.units.Swf.defaults, {
+        width: {"type":"number", "default": 800},
+        height: {"type":"number", "default": 600},
+        duration: {"type":"number", "default": 8},
+        blocking: {"type":"boolean", "default": true},
+        clickTagName: {"type":"text", "default":"clickTag"}
+    });
 })(self.Ads);;/*
     
    VideoUnit
@@ -685,10 +703,9 @@ if (window.DMVAST) {
 (function(Ads, vast) {
     "use strict";
     Ads.units.VideoUnit = augment(Ads.units.BaseUnit, function(uber) {
+
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
-            this.volume = options.volume || 0;
-            this.top_right_icon = options.top_right_icon || "volume-up";
             this.video_tag_selector = this.slotName + "_video";
             this.video_tag = this.createVideoTag(this.slotName);
 
@@ -706,7 +723,7 @@ if (window.DMVAST) {
                         video_unit.setupVAST(res);
                         video_unit.data_loaded = true;
                         if (video_unit.built) {
-                            video_unit.play(video_unit.volume);
+                            video_unit.play(video_unit.options.volume);
                         }
                     }
                 });
@@ -716,7 +733,7 @@ if (window.DMVAST) {
         this.render = function() {
             uber.render.call(this);
             if (this.data_loaded) {
-                this.play(this.volume);
+                this.play();
             }
         }
 
@@ -777,7 +794,7 @@ if (window.DMVAST) {
                     });
                     video_unit.player.on('play', function() {video_unit.vastTracker.setPaused(false);});
                     video_unit.player.on('pause', function() {video_unit.vastTracker.setPaused(true);});
-                    video_unit.startPlayer(this, video_unit.volume);
+                    video_unit.startPlayer(this, video_unit.options.volume);
                 });
             }
         };
@@ -790,7 +807,6 @@ if (window.DMVAST) {
 
             //add whatever icons, do unit-specific behavior, etc
             if (this.behavior) this[this.behavior]();
-
             player.prevTime = 0;
             player.src(this.sources);
             player.volume(volume);
@@ -802,10 +818,10 @@ if (window.DMVAST) {
             //video player with enlarge button during play, repeat button on end
             this.player.on('ended', $.proxy(this.end, this));
             var container = $("#" + this.video_tag_selector);
-            var current_icon = this.current_icon || this.top_right_icon;
+            var current_icon = this.current_icon || this.options.top_right_icon;
             var top_right_icon = $("<i class='fa fa-" + current_icon + "'></i>");
             container.append(top_right_icon);
-            container.on('click', 'i.fa-' + this.top_right_icon, $.proxy(this.enlargePlayer, this));
+            container.on('click', 'i.fa-' + this.options.top_right_icon, $.proxy(this.enlargePlayer, this));
             container.on('click', 'i.fa-compress', $.proxy(this.minimize, this));
             container.on('click', 'i.fa-repeat', $.proxy(this.repeat, this));
         };
@@ -849,7 +865,7 @@ if (window.DMVAST) {
             this.play(0);
             $("#" + this.video_tag_selector).find("i")
                 .removeClass()
-                .addClass('fa fa-' + this.top_right_icon);
+                .addClass('fa fa-' + this.options.top_right_icon);
             $(document).off("keyup");
             return false;
         };
@@ -922,6 +938,15 @@ if (window.DMVAST) {
             }
         };
     })
+    
+    Ads.units.VideoUnit.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
+        vast_url: {"type": "url", "default":""},
+        volume: {"type": "number", "default": 0},
+        top_right_icon: {"type": "text", "default": "volume-up"},
+        behavior: {"type": "select", "default": "enlarge", "options": ["enlarge"]},
+        video_expand_pixel_tracker: {"type": "pixel", "default": ""},
+        video_sound_pixel_tracker:  {"type": "pixel", "default": ""}
+    });
 
 })(self.Ads, DMVAST);
 
@@ -931,6 +956,7 @@ if (window.DMVAST) {
 ;(function(Ads) {
     "use strict";
     Ads.units.VideoSkin = augment(Ads.units.VideoUnit, function(uber) {
+
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }
@@ -981,5 +1007,9 @@ if (window.DMVAST) {
             uber.setMarkup.call(this, $body);
         };
     })
+
+    Ads.units.VideoSkin.defaults = $.extend({}, Ads.units.VideoUnit.defaults, {
+        image: {"type": "image", "default": ""}
+    });
 
 })(self.Ads);

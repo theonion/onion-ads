@@ -29,5 +29,7 @@
             $body.html(html);
         };
     })
-
+    Ads.units.BaseUnit.defaults = {
+        image: {"type":"image", "default":""}
+    };
 })(self.Ads);

@@ -4,6 +4,7 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.VideoSkin = augment(Ads.units.VideoUnit, function(uber) {
+
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }
@@ -54,5 +55,9 @@
             uber.setMarkup.call(this, $body);
         };
     })
+
+    Ads.units.VideoSkin.defaults = $.extend({}, Ads.units.VideoUnit.defaults, {
+        image: {"type": "image", "default": ""}
+    });
 
 })(self.Ads);

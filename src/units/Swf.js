@@ -15,16 +15,10 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.Swf = augment(Ads.units.BaseUnit, function(uber) {
-        this.defaults = {
-            clickTagName : "clickTag",
-            width: 300,
-            height: 250,
-            clickthru: "#",
-            image:""
-        }
+
+        
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
-            this.options = $.extend(this.options, this.defaults);
             //drop in placeholder
             var element = $("div", this.$body)[0];
             $("<img src='" + this.options.image + "'>").appendTo(element);
@@ -50,5 +44,14 @@
         };
 
         this.setStyle = function() {}
-    })
+    });
+
+    Ads.units.Swf.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
+        clickTagName: {"type": "text", "default":"clickTag"},
+        width: {"type": "number", "default": 300},
+        height: {"type": "number", "default": 250},
+        clickthru: {"type": "url", "default": ""},
+        image: {"type": "image", "default": ""}
+    });
+
 })(this.Ads)

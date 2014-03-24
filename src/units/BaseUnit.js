@@ -4,13 +4,8 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
-        this.defaults = {
-            pixel: "",
-            clickthru:""
-        }
-
         this.constructor = function(loader, $slot, $iframe, options) {
-            this.options = $.extend(this.defaults, options);
+            this.options = $.extend({}, this.getDefaults(), options);
             this.loader = loader;
             this.$iframe = $iframe;
             this.$body = $("body", $iframe.contents()),
@@ -20,6 +15,17 @@
             this.resize($slot.data("width"), $slot.data("height"));
             this.originalSize = {width: $slot.data("width"), height: $slot.data("height")}
         }
+
+        this.getDefaults = function() {
+            var defaults = {};
+            for (var k in this.constructor.defaults) {
+                if (k) {
+                    defaults[k] = this.constructor.defaults[k];
+                }
+            }
+            return defaults;
+        }
+
 
         this.resize = function(w, h) {
             this.$iframe.width(w);
@@ -110,5 +116,10 @@
                 return style;
             }
         }
-    })
+    });
+
+    Ads.units.BaseUnit.defaults = {
+        pixel: {"type":"pixel", "default":""},
+        clickthru: {"type":"url", "default": ""}
+    };
 })(self.Ads);
