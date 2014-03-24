@@ -41,5 +41,14 @@
         };
 
         this.setStyle = function() {}
-    })
+    });
+
+    Ads.units.Swf.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
+        clickTagName : "clickTag",
+        width: 300,
+        height: 250,
+        clickthru: "#",
+        image:""
+    });
+
 })(this.Ads)

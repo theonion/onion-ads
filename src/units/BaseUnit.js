@@ -4,14 +4,8 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.BaseUnit = augment(Object, function() {
-        this.defaults = {
-            pixel: "",
-            clickthru:""
-        }
-
         this.constructor = function(loader, $slot, $iframe, options) {
-            var tmp = this.defaults;
-            this.options = $.extend(tmp, options);
+            this.options = $.extend({}, this.constructor.defaults, options);
             this.loader = loader;
             this.$iframe = $iframe;
             this.$body = $("body", $iframe.contents()),
@@ -111,5 +105,10 @@
                 return style;
             }
         }
-    })
+    });
+
+    Ads.units.BaseUnit.defaults = {
+        pixel: "",
+        clickthru:""
+    };
 })(self.Ads);

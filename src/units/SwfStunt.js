@@ -27,5 +27,13 @@
             this.resize(this.options.width, this.options.height);
             setTimeout($.proxy(this.destroy, this), this.options.delay * 1000);
         }
-    })
+    });
+
+    Ads.units.SwfStunt.defaults = $.extend({}, Ads.units.Swf.defaults, {
+        width: 800,
+        height: 600,
+        delay: 8,
+        blocking: true,
+        clickTagName: "clickTag"
+    });
 })(self.Ads);

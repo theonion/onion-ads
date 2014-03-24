@@ -7,14 +7,6 @@ if (window.DMVAST) {
 (function(Ads, vast) {
     "use strict";
     Ads.units.VideoUnit = augment(Ads.units.BaseUnit, function(uber) {
-        this.defaults = $.extend({
-            vast_url: "",
-            volume: 0,
-            top_right_icon: "volume-up",
-            behavior: "enlarge",
-            video_expand_pixel_tracker: "",
-            video_sound_pixel_tracker: ""
-        }, uber.defaults);
 
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
@@ -251,6 +243,15 @@ if (window.DMVAST) {
             }
         };
     })
+    
+    Ads.units.VideoUnit.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
+        vast_url: "",
+        volume: 0,
+        top_right_icon: "volume-up",
+        behavior: "enlarge",
+        video_expand_pixel_tracker: "",
+        video_sound_pixel_tracker: ""
+    });
 
 })(self.Ads, DMVAST);
 
