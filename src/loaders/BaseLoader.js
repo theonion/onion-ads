@@ -110,7 +110,13 @@
             }
         };
 
-        this.destroy = function() {
+
+        this.refresh = function() {
+            this.destroyUnits();
+            this.load();
+        }
+
+        this.destroyUnits = function() {
             // kill all ad units
             var slots = Object.keys(this.units);
             for (var i = 0; i < slots.length; i++) {
@@ -120,8 +126,12 @@
             $(this.options.selector).children().remove();
 
             //remove all classnames from body that begin with "ad-"
-            document.body.className = document.body.className.replace(/ad-\S+/g, "").trim()
+            document.body.className = document.body.className.replace(/ad-\S+/g, "").trim();
+            this.units = {};
         }
 
+        this.destroy = function() {
+            this.destroyUnits();
+        }
     })
 })(this.Ads);

@@ -6,6 +6,7 @@
     Ads.units.BaseUnit = augment(Object, function() {
         this.defaults = {
             pixel: "",
+            clickthru:""
         }
 
         this.constructor = function(loader, $slot, $iframe, options) {

@@ -114,7 +114,7 @@ var FlashReplace = {
 
 
         //reload is pretty aggressive... tears the loader down and builds it back up.
-        this.reload = function(options) {
+        this.reload = function(options) {   
             if (typeof options !== "undefined") {
                 this.options = $.extend(this.options, options);
             }
@@ -123,7 +123,7 @@ var FlashReplace = {
         }
 
         this.refresh = function() {
-            this.loader.refresh(targeting);
+            this.loader.refresh();
         }
 
         this.destroy = function() {
@@ -259,7 +259,13 @@ var FlashReplace = {
             }
         };
 
-        this.destroy = function() {
+
+        this.refresh = function() {
+            this.destroyUnits();
+            this.load();
+        }
+
+        this.destroyUnits = function() {
             // kill all ad units
             var slots = Object.keys(this.units);
             for (var i = 0; i < slots.length; i++) {
@@ -269,9 +275,13 @@ var FlashReplace = {
             $(this.options.selector).children().remove();
 
             //remove all classnames from body that begin with "ad-"
-            document.body.className = document.body.className.replace(/ad-\S+/g, "").trim()
+            document.body.className = document.body.className.replace(/ad-\S+/g, "").trim();
+            this.units = {};
         }
 
+        this.destroy = function() {
+            this.destroyUnits();
+        }
     })
 })(this.Ads);;/* Loads ads from DFP */
 ;(function(Ads) {
@@ -280,14 +290,14 @@ var FlashReplace = {
 
         this.constructor = function(options) {
             uber.constructor.call(this, options);
-            this.activeAds = {}
+            this.activeAds = {}; //DFP ad objects...
         }
 
         this.refresh = function() {
-            
+            this.destroyUnits(); //remove any customizations from custom units...
+            var ads = [];
             $(self.activeAds).each(function(i){
-                var slot_name = this.id.replace("dfp-ad-", "");
-                ads.push(self.activeAds[slot_name]);
+                ads.push(self.activeAds[this.data("slotname")]);
             });
             googletag.pubads().refresh(web_ads);
         }
@@ -424,6 +434,7 @@ var FlashReplace = {
     Ads.units.BaseUnit = augment(Object, function() {
         this.defaults = {
             pixel: "",
+            clickthru:""
         }
 
         this.constructor = function(loader, $slot, $iframe, options) {
@@ -508,6 +519,22 @@ var FlashReplace = {
             }
         }
     })
+})(self.Ads);;/*
+    Used to hide a slot in certain cases.
+*/      
+;(function(Ads) {
+    "use strict";
+    Ads.units.Hide = augment(Ads.units.BaseUnit, function(uber) {
+
+        this.constructor = function(loader, $slot, $iframe, options) {
+            uber.constructor.call(this, loader, $slot, $iframe, options);
+        }
+
+        this.setStyle = function($body) {
+            this.resize(0, 0);
+        }
+    })
+
 })(self.Ads);;/*
    
 */      

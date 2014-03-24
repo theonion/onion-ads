@@ -5,14 +5,14 @@
 
         this.constructor = function(options) {
             uber.constructor.call(this, options);
-            this.activeAds = {}
+            this.activeAds = {}; //DFP ad objects...
         }
 
         this.refresh = function() {
-            
+            this.destroyUnits(); //remove any customizations from custom units...
+            var ads = [];
             $(self.activeAds).each(function(i){
-                var slot_name = this.id.replace("dfp-ad-", "");
-                ads.push(self.activeAds[slot_name]);
+                ads.push(self.activeAds[this.data("slotname")]);
             });
             googletag.pubads().refresh(web_ads);
         }
