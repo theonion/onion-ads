@@ -573,13 +573,14 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.Swf = augment(Ads.units.BaseUnit, function(uber) {
-        this.defaults = {
+        this.defaults = $.extend({
             clickTagName : "clickTag",
             width: 300,
             height: 250,
             clickthru: "#",
             image:""
-        }
+        }, uber.defaults);
+        
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
             //drop in placeholder
@@ -614,13 +615,14 @@ var FlashReplace = {
 ;(function(Ads) {
     "use strict";
     Ads.units.SwfStunt = augment(Ads.units.Swf, function(uber) {
-        this.defaults = {
+        this.defaults = $.extend({
             width: 800,
             height: 600,
             delay: 8,
             blocking: true,
             clickTagName: "clickTag"
-        }
+        }, uber.defaults);
+        
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }

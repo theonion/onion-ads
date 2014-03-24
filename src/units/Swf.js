@@ -6,13 +6,14 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.Swf = augment(Ads.units.BaseUnit, function(uber) {
-        this.defaults = {
+        this.defaults = $.extend({
             clickTagName : "clickTag",
             width: 300,
             height: 250,
             clickthru: "#",
             image:""
-        }
+        }, uber.defaults);
+        
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
             //drop in placeholder
