@@ -582,7 +582,6 @@ var FlashReplace = {
         }
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
-            this.options = $.extend(this.options, this.defaults);
             //drop in placeholder
             var element = $("div", this.$body)[0];
             $("<img src='" + this.options.image + "'>").appendTo(element);
