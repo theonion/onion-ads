@@ -81,13 +81,33 @@
         }
 
         this.utils = {
-            template: function(html, dict) {    
+            template: function(html, dict) {
                 for (var k in dict) {
                     if (k) {
                         html = html.replace(new RegExp("{{" + k + "}}", 'g'), dict[k]);
                     }
                 }
                 return html;
+            },
+            createStyleSheet: function(sheet) {
+                var style = document.createElement("style");
+                style.type = "text/css";
+
+                var css = "";
+                for (var selector in sheet) {
+                    var temp = "" + selector + '{';
+                    for (var rule in sheet[selector]) {
+                        temp += rule + ':' + sheet[selector][rule] + ';';
+                    }
+                    temp += '}';
+                    css += temp;
+                }
+                if (style.styleSheet) {
+                    style.styleSheet.cssText = css;
+                } else {
+                    style.appendChild(document.createTextNode(css));
+                }
+                return style;
             }
         }
     })
