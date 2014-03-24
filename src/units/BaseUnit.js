@@ -10,7 +10,7 @@
         }
 
         this.constructor = function(loader, $slot, $iframe, options) {
-            this.options = $.extend(this.defaults, options);
+            this.options = $.extend(options, this.defaults);
             this.loader = loader;
             this.$iframe = $iframe;
             this.$body = $("body", $iframe.contents()),

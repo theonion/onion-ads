@@ -438,7 +438,7 @@ var FlashReplace = {
         }
 
         this.constructor = function(loader, $slot, $iframe, options) {
-            this.options = $.extend(this.defaults, options);
+            this.options = $.extend(options, this.defaults);
             this.loader = loader;
             this.$iframe = $iframe;
             this.$body = $("body", $iframe.contents()),
@@ -539,22 +539,6 @@ var FlashReplace = {
             }
         }
     })
-})(self.Ads);;/*
-    Used to hide a slot in certain cases.
-*/      
-;(function(Ads) {
-    "use strict";
-    Ads.units.Hide = augment(Ads.units.BaseUnit, function(uber) {
-
-        this.constructor = function(loader, $slot, $iframe, options) {
-            uber.constructor.call(this, loader, $slot, $iframe, options);
-        }
-
-        this.setStyle = function($body) {
-            this.resize(0, 0);
-        }
-    })
-
 })(self.Ads);;/*
    
 */      
