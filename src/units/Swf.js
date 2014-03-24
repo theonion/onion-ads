@@ -1,7 +1,16 @@
 /*
-    Base for loader objects. If used directly, will only display placeholders.
+    
+    SWF Unit
 
-    Defines a common interface for dealing with ads, regardless of where they come from.
+    Displays an SWF with an image fallback if Flash isn't available. 
+
+    Options: 
+    - pixel
+    - clickthru
+    - clickTagName
+    - width
+    - height
+    - image
 */  
 ;(function(Ads) {
     "use strict";

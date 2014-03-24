@@ -1,5 +1,11 @@
 /*
-   
+    Standard skin
+
+
+    Options: 
+    - pixel
+    - clickthru
+    - image
 */      
 ;(function(Ads) {
     "use strict";

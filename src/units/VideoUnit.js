@@ -1,5 +1,14 @@
 /*
-   
+    
+   VideoUnit
+
+    Base for all video ad units. On its own, displays 
+
+    Options: 
+    - pixel
+    - clickthru
+    - vast_url
+    - poster_url
 */      
 ;
 if (window.DMVAST) {

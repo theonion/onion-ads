@@ -540,23 +540,13 @@ var FlashReplace = {
         }
     })
 })(self.Ads);;/*
-    Used to hide a slot in certain cases.
-*/      
-;(function(Ads) {
-    "use strict";
-    Ads.units.Hide = augment(Ads.units.BaseUnit, function(uber) {
+    Standard skin
 
-        this.constructor = function(loader, $slot, $iframe, options) {
-            uber.constructor.call(this, loader, $slot, $iframe, options);
-        }
 
-        this.setStyle = function($body) {
-            this.resize(0, 0);
-        }
-    })
-
-})(self.Ads);;/*
-   
+    Options: 
+    - pixel
+    - clickthru
+    - image
 */      
 ;(function(Ads) {
     "use strict";
@@ -582,9 +572,18 @@ var FlashReplace = {
     })
 
 })(self.Ads);;/*
-    Base for loader objects. If used directly, will only display placeholders.
+    
+    SWF Unit
 
-    Defines a common interface for dealing with ads, regardless of where they come from.
+    Displays an SWF with an image fallback if Flash isn't available. 
+
+    Options: 
+    - pixel
+    - clickthru
+    - clickTagName
+    - width
+    - height
+    - image
 */  
 ;(function(Ads) {
     "use strict";
@@ -626,7 +625,21 @@ var FlashReplace = {
         this.setStyle = function() {}
     })
 })(this.Ads);/*
-   
+
+    Swf Stunt 
+
+    This unit pops up a flash overlay.
+
+    Options: 
+    - pixel
+    - clickthru
+    - clickTagName
+    - width
+    - height
+    - image
+    - blocking
+    - duration 
+
 */  
 ;(function(Ads) {
     "use strict";
@@ -634,7 +647,7 @@ var FlashReplace = {
         this.defaults = {
             width: 800,
             height: 600,
-            delay: 8,
+            duration: 8,
             blocking: true,
             clickTagName: "clickTag"
         }
@@ -651,11 +664,20 @@ var FlashReplace = {
             });
             
             this.resize(this.options.width, this.options.height);
-            setTimeout($.proxy(this.destroy, this), this.options.delay * 1000);
+            setTimeout($.proxy(this.destroy, this), this.options.duration * 1000);
         }
     })
 })(self.Ads);;/*
-   
+    
+   VideoUnit
+
+    Base for all video ad units. On its own, displays 
+
+    Options: 
+    - pixel
+    - clickthru
+    - vast_url
+    - poster_url
 */      
 ;
 if (window.DMVAST) {

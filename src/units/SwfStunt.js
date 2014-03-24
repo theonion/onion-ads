@@ -1,5 +1,19 @@
 /*
-   
+
+    Swf Stunt 
+
+    This unit pops up a flash overlay.
+
+    Options: 
+    - pixel
+    - clickthru
+    - clickTagName
+    - width
+    - height
+    - image
+    - blocking
+    - duration 
+
 */  
 ;(function(Ads) {
     "use strict";
@@ -7,7 +21,7 @@
         this.defaults = {
             width: 800,
             height: 600,
-            delay: 8,
+            duration: 8,
             blocking: true,
             clickTagName: "clickTag"
         }
@@ -24,7 +38,7 @@
             });
             
             this.resize(this.options.width, this.options.height);
-            setTimeout($.proxy(this.destroy, this), this.options.delay * 1000);
+            setTimeout($.proxy(this.destroy, this), this.options.duration * 1000);
         }
     })
 })(self.Ads);
