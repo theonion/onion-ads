@@ -27,7 +27,7 @@ if (window.DMVAST) {
                         video_unit.setupVAST(res);
                         video_unit.data_loaded = true;
                         if (video_unit.built) {
-                            video_unit.play(video_unit.volume);
+                            video_unit.play(video_unit.options.volume);
                         }
                     }
                 });
@@ -37,7 +37,7 @@ if (window.DMVAST) {
         this.render = function() {
             uber.render.call(this);
             if (this.data_loaded) {
-                this.play(this.options.volume);
+                this.play();
             }
         }
 
@@ -98,7 +98,7 @@ if (window.DMVAST) {
                     });
                     video_unit.player.on('play', function() {video_unit.vastTracker.setPaused(false);});
                     video_unit.player.on('pause', function() {video_unit.vastTracker.setPaused(true);});
-                    video_unit.startPlayer(this, video_unit.volume);
+                    video_unit.startPlayer(this, video_unit.options.volume);
                 });
             }
         };
@@ -111,7 +111,6 @@ if (window.DMVAST) {
 
             //add whatever icons, do unit-specific behavior, etc
             if (this.behavior) this[this.behavior]();
-
             player.prevTime = 0;
             player.src(this.sources);
             player.volume(volume);
