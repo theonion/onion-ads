@@ -4,6 +4,10 @@
 ;(function(Ads) {
     "use strict";
     Ads.units.VideoSkin = augment(Ads.units.VideoUnit, function(uber) {
+        this.defaults = $.extend({
+            skin_image_url: ""
+        }, uber.defaults);
+
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }

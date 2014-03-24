@@ -438,7 +438,8 @@ var FlashReplace = {
         }
 
         this.constructor = function(loader, $slot, $iframe, options) {
-            this.options = $.extend(options, this.defaults);
+            var tmp = this.defaults;
+            this.options = $.extend(tmp, options);
             this.loader = loader;
             this.$iframe = $iframe;
             this.$body = $("body", $iframe.contents()),
@@ -648,10 +649,17 @@ if (window.DMVAST) {
 (function(Ads, vast) {
     "use strict";
     Ads.units.VideoUnit = augment(Ads.units.BaseUnit, function(uber) {
+        this.defaults = $.extend({
+            vast_url: "",
+            volume: 0,
+            top_right_icon: "volume-up",
+            behavior: "enlarge",
+            video_expand_pixel_tracker: "",
+            video_sound_pixel_tracker: ""
+        }, uber.defaults);
+
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
-            this.volume = options.volume || 0;
-            this.top_right_icon = options.top_right_icon || "volume-up";
             this.video_tag_selector = this.slotName + "_video";
             this.video_tag = this.createVideoTag(this.slotName);
 
@@ -679,7 +687,7 @@ if (window.DMVAST) {
         this.render = function() {
             uber.render.call(this);
             if (this.data_loaded) {
-                this.play(this.volume);
+                this.play(this.options.volume);
             }
         }
 
@@ -765,10 +773,10 @@ if (window.DMVAST) {
             //video player with enlarge button during play, repeat button on end
             this.player.on('ended', $.proxy(this.end, this));
             var container = $("#" + this.video_tag_selector);
-            var current_icon = this.current_icon || this.top_right_icon;
+            var current_icon = this.current_icon || this.options.top_right_icon;
             var top_right_icon = $("<i class='fa fa-" + current_icon + "'></i>");
             container.append(top_right_icon);
-            container.on('click', 'i.fa-' + this.top_right_icon, $.proxy(this.enlargePlayer, this));
+            container.on('click', 'i.fa-' + this.options.top_right_icon, $.proxy(this.enlargePlayer, this));
             container.on('click', 'i.fa-compress', $.proxy(this.minimize, this));
             container.on('click', 'i.fa-repeat', $.proxy(this.repeat, this));
         };
@@ -812,7 +820,7 @@ if (window.DMVAST) {
             this.play(0);
             $("#" + this.video_tag_selector).find("i")
                 .removeClass()
-                .addClass('fa fa-' + this.top_right_icon);
+                .addClass('fa fa-' + this.options.top_right_icon);
             $(document).off("keyup");
             return false;
         };
@@ -894,6 +902,10 @@ if (window.DMVAST) {
 ;(function(Ads) {
     "use strict";
     Ads.units.VideoSkin = augment(Ads.units.VideoUnit, function(uber) {
+        this.defaults = $.extend({
+            skin_image_url: ""
+        }, uber.defaults);
+
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }
