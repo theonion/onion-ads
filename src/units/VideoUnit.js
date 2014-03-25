@@ -258,7 +258,7 @@ if (window.DMVAST) {
         vast_url: {"type": "url", "default":""},
         volume: {"type": "number", "default": 0},
         top_right_icon: {"type": "text", "default": "volume-up"},
-        behavior: {"type": "select", "default": "enlarge", "options": ["enlarge"]},
+        behavior: {"type": "select", "default": "", "options": ["enlarge"]},
         video_expand_pixel_tracker: {"type": "pixel", "default": ""},
         video_sound_pixel_tracker:  {"type": "pixel", "default": ""}
     });
