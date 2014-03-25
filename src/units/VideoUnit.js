@@ -23,15 +23,16 @@ if (window.DMVAST) {
             this.video_tag = this.createVideoTag(this.slotName);
 
             // this is so dumb
-            var behaviors = {"enlarge":0, "soundOn": 0};
-            this.behavior = behaviors[options.behavior];
-            if (behaviors[options.behavior]) {
-                this.behavior = options.behavior;
+            var behaviors = {"enlarge":1, "soundOn": 1};
+
+            this.behavior = behaviors[this.options.behavior];
+            if (behaviors[this.options.behavior]) {
+                this.behavior = this.options.behavior;
             }
 
             var video_unit = this;
-            if (options.vast_url) {
-                vast.client.get(options.vast_url, function(res) {
+            if (this.options.vast_url) {
+                vast.client.get(this.options.vast_url, function(res) {
                     if (res) {
                         video_unit.setupVAST(res);
                         video_unit.data_loaded = true;
@@ -130,9 +131,10 @@ if (window.DMVAST) {
         this.enlarge = function() {
             //video player with enlarge button during play, repeat button on end
             this.player.on('ended', $.proxy(this.end, this));
-            var container = $("#" + this.video_tag_selector);
+            var container = this.$body.find("#" + this.video_tag_selector);
             var current_icon = this.current_icon || this.options.top_right_icon;
             var top_right_icon = $("<i class='fa fa-" + current_icon + "'></i>");
+
             container.append(top_right_icon);
             container.on('click', 'i.fa-' + this.options.top_right_icon, $.proxy(this.enlargePlayer, this));
             container.on('click', 'i.fa-compress', $.proxy(this.minimize, this));
@@ -141,20 +143,20 @@ if (window.DMVAST) {
 
         this.enlargePlayer = function() {
             this.current_icon = 'compress';
-            $("#" + this.video_tag_selector).find("i")
+            this.$body.find("#" + this.video_tag_selector).find("i")
                 .removeClass()
                 .addClass('fa fa-compress');
             $(document).keyup(function(e){if (e.which == 27) { 
                 $.proxy(this.minimize, this);
             }});
-            $("#" + this.video_tag_selector).parent().addClass('enlarged');
+            this.$body.find("#" + this.video_tag_selector).parent().addClass('enlarged');
             this.play(1);
             this.firePixel(this.options.video_expand_pixel_tracker);
             return false;
         };
 
         this.soundOn = function() {
-            var container = $("#" + this.video_tag_selector);
+            var container = this.$body.find("#" + this.video_tag_selector);
             var enlargeicon = $("<i class='fa fa-volume-up'></i>");
             container.append(enlargeicon);
             container.on('click', 'i.fa-volume-up', $.proxy(this.setSoundOn, this));
@@ -169,14 +171,14 @@ if (window.DMVAST) {
         };
 
         this.repeat = function() {
-            $("#" + this.video_tag_selector).find("img.poster").remove();
+            this.$body.find("#" + this.video_tag_selector).find("img.poster").remove();
             return this.enlargePlayer();
         };
 
         this.minimize = function() {
-            $("#" + this.video_tag_selector).parent().removeClass('enlarged');
+            this.$body.find("#" + this.video_tag_selector).parent().removeClass('enlarged');
             this.play(0);
-            $("#" + this.video_tag_selector).find("i")
+            this.$body.find("#" + this.video_tag_selector).find("i")
                 .removeClass()
                 .addClass('fa fa-' + this.options.top_right_icon);
             $(document).off("keyup");
@@ -189,9 +191,9 @@ if (window.DMVAST) {
         };
 
         this.end = function() {
-            $("#" + this.video_tag_selector + " img").remove();
-            $("#" + this.video_tag_selector).parent().removeClass('enlarged');
-            $("#" + this.video_tag_selector).find("i")
+            this.$body.find("#" + this.video_tag_selector + " img").remove();
+            this.$body.find("#" + this.video_tag_selector).parent().removeClass('enlarged');
+            this.$body.find("#" + this.video_tag_selector).find("i")
                 .removeClass()
                 .addClass('fa fa-repeat');
             if(this.options.poster_url){
@@ -201,7 +203,7 @@ if (window.DMVAST) {
                     "_poster poster' src='" +
                     this.options.poster_url +
                     "'>");
-                $("#" + this.video_tag_selector).append(img);
+                this.$body.find("#" + this.video_tag_selector).append(img);
             }
         };
 
@@ -256,7 +258,7 @@ if (window.DMVAST) {
         vast_url: {"type": "url", "default":""},
         volume: {"type": "number", "default": 0},
         top_right_icon: {"type": "text", "default": "volume-up"},
-        behavior: {"type": "select", "default": "enlarge", "options": ["enlarge"]},
+        behavior: {"type": "select", "default": "", "options": ["enlarge"]},
         video_expand_pixel_tracker: {"type": "pixel", "default": ""},
         video_sound_pixel_tracker:  {"type": "pixel", "default": ""}
     });
