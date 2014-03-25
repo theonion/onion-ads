@@ -29,6 +29,11 @@
                     height: "100%"
                 }
             };
+            sheet["a.enlarged > div#"+this.video_tag_selector] = {
+                left: 0,
+                width: "692px!important",
+                height: "390px!important"
+            };
             sheet["a > div#"+this.video_tag_selector] = {
                 width: "346px !important",
                 height: "195px !important",
@@ -40,10 +45,21 @@
                 "overflow-y": "hidden",
                 "z-index": 2
             };
+            sheet["a > div#"+this.video_tag_selector+" i"] = {
+                position: "absolute",
+                top: 0,
+                right: "2px",
+                color: "#fefefe",
+                "z-index": 1,
+                "font-size": "30px"
+            };
             sheet["a > video#"+this.video_tag_selector] = {
                 display: "none"
-            }
+            };
             var style = this.utils.createStyleSheet(sheet);
+            this.$iframe.contents().find("head").append(
+                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'>"
+            )
             this.$iframe.contents().find("head").append(style);
         }
 

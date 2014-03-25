@@ -85,7 +85,7 @@ if (window.DMVAST) {
             var video_unit = this;
             if(videojs.players[this.video_tag_selector]) {
                 this.player.dispose();
-                var videotag = createVideoTag(video_unit.slotName);
+                var videotag = this.createVideoTag(video_unit.slotName);
                 $(this.video_anchor).prepend(videotag);
             }
             var videojs_options = {

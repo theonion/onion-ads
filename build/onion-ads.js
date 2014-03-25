@@ -772,7 +772,7 @@ if (window.DMVAST) {
             var video_unit = this;
             if(videojs.players[this.video_tag_selector]) {
                 this.player.dispose();
-                var videotag = createVideoTag(video_unit.slotName);
+                var videotag = this.createVideoTag(video_unit.slotName);
                 $(this.video_anchor).prepend(videotag);
             }
             var videojs_options = {
@@ -983,6 +983,11 @@ if (window.DMVAST) {
                     height: "100%"
                 }
             };
+            sheet["a.enlarged > div#"+this.video_tag_selector] = {
+                left: 0,
+                width: "692px!important",
+                height: "390px!important"
+            };
             sheet["a > div#"+this.video_tag_selector] = {
                 width: "346px !important",
                 height: "195px !important",
@@ -994,10 +999,21 @@ if (window.DMVAST) {
                 "overflow-y": "hidden",
                 "z-index": 2
             };
+            sheet["a > div#"+this.video_tag_selector+" i"] = {
+                position: "absolute",
+                top: 0,
+                right: "2px",
+                color: "#fefefe",
+                "z-index": 1,
+                "font-size": "30px"
+            };
             sheet["a > video#"+this.video_tag_selector] = {
                 display: "none"
-            }
+            };
             var style = this.utils.createStyleSheet(sheet);
+            this.$iframe.contents().find("head").append(
+                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'>"
+            )
             this.$iframe.contents().find("head").append(style);
         }
 
