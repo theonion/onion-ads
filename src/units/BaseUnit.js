@@ -20,7 +20,7 @@
             var defaults = {};
             for (var k in this.constructor.defaults) {
                 if (k) {
-                    defaults[k] = this.constructor.defaults[k];
+                    defaults[k] = this.constructor.defaults[k]["default"];
                 }
             }
             return defaults;
