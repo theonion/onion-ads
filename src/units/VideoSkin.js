@@ -44,6 +44,9 @@
                 display: "none"
             }
             var style = this.utils.createStyleSheet(sheet);
+            this.$iframe.contents().find("head").append(
+                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'>"
+            )
             this.$iframe.contents().find("head").append(style);
         }
 
