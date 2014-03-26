@@ -10,7 +10,8 @@
         }
 
         this.setStyle = function($body) {
-            this.resize(1460, 300);
+            this.resize(1460, 460);
+
             var sheet = {
                 "a.videoskin": {
                     position: "absolute",
@@ -56,6 +57,22 @@
             sheet["a > video#"+this.video_tag_selector] = {
                 display: "none"
             };
+
+            if (this.options.gradient) {
+                var bodyBackground = window.parent.$("body").css("background-color");
+                sheet["a.wallpaper"] =  {
+                    "background-position": "top",
+                    "background-repeat": "no-repeat",
+                    "-webkit-box-shadow": "inset 0px -100px 100px -30px " + bodyBackground ,
+                    "-mox-box-shadow":  "inset 0px -100px 100px -30px " + bodyBackground,
+                    "box-shadow": "inset 0px -100px 100px -30px " + bodyBackground,
+                    "height": "460px",
+                    "width": "100%",
+                    "position": "absolute",
+                    "z-index": "1"
+                }
+            }
+
             var style = this.utils.createStyleSheet(sheet);
             this.$iframe.contents().find("head").append(
                 "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'>"
@@ -65,7 +82,7 @@
 
         this.setMarkup = function($body) {
             var html = this.utils.template(
-                '<a target="_blank" href="{{skin_clickthru_url}}" class="videoskin"></a>',
+                '<a target="_blank" href="{{skin_clickthru_url}}" class="wallpaper videoskin"></a>',
                 this.options );
             $body.html(html);
             uber.setMarkup.call(this, $body);
@@ -73,7 +90,8 @@
     })
 
     Ads.units.VideoSkin.defaults = $.extend({}, Ads.units.VideoUnit.defaults, {
-        image: {"type": "image", "default": ""}
+        image: {"type": "image", "default": ""},
+        gradient: {"type":"boolean", "default":true}
     });
 
 })(self.Ads);
