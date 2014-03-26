@@ -50,7 +50,6 @@
         clickTagName: {"type": "text", "default":"clickTag"},
         width: {"type": "number", "default": 300},
         height: {"type": "number", "default": 250},
-        clickthru: {"type": "url", "default": ""},
         image: {"type": "image", "default": ""}
     });
 

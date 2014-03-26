@@ -115,10 +115,10 @@ var FlashReplace = {
 
         //reload is pretty aggressive... tears the loader down and builds it back up.
         this.reload = function(options) {   
+            this.loader.destroy();
             if (typeof options !== "undefined") {
                 this.options = $.extend(this.options, options);
             }
-            this.loader.destroy();
             this.init(this.options);
         }
 
@@ -636,7 +636,6 @@ var FlashReplace = {
         clickTagName: {"type": "text", "default":"clickTag"},
         width: {"type": "number", "default": 300},
         height: {"type": "number", "default": 250},
-        clickthru: {"type": "url", "default": ""},
         image: {"type": "image", "default": ""}
     });
 

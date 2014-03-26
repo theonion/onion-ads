@@ -38,10 +38,10 @@
 
         //reload is pretty aggressive... tears the loader down and builds it back up.
         this.reload = function(options) {   
+            this.loader.destroy();
             if (typeof options !== "undefined") {
                 this.options = $.extend(this.options, options);
             }
-            this.loader.destroy();
             this.init(this.options);
         }
 
