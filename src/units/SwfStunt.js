@@ -43,4 +43,4 @@
         blocking: {"type":"boolean", "default": true},
         clickTagName: {"type":"text", "default":"clickTag"}
     });
-})(self.Ads);
+})(this.Ads);

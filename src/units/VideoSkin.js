@@ -94,4 +94,4 @@
         gradient: {"type":"boolean", "default":true}
     });
 
-})(self.Ads);
+})(this.Ads);

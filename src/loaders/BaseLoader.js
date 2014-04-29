@@ -13,18 +13,7 @@
         }
 
         this.getSlots = function() {
-            var slots = $(this.options.selector),
-                temp = {};
-            for (var i = 0; i < slots.length; i++) {
-                var slotname = $(slots[i]).attr("data-slotname");
-                if (temp[slotname]) {
-                    console.warn("Slotname: " + slotname + " has a duplicate");
-                    continue;
-                } else {
-                    temp[slotname] = slots[i];
-                }
-            }
-            return $.map(temp, function(el, index) {return el});
+            return $(this.options.selector);
         }
 
         this.insertIframe = function(element, contents) {

@@ -6,8 +6,7 @@
     "Mike Wnuk <mwnuk@theonion.com>",
     "Shaker Islam <sislam@theonion.com>"
   ],
-  "private": true,
-  "description": "This puts ads on the Onion & Av Club. You're welcome.",
+  "description": "This puts ads on the Onion & A.V. Club. You're welcome.",
   "main": "build/onion-ads.js",
   "license": "MIT",
   "ignore": [
@@ -19,5 +18,6 @@
     "spec",
     "example",
     "src"
-  ]
+  ],
+  "license": "MIT"
 }

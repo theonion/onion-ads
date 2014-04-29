@@ -19,7 +19,6 @@
 
         this.setStyle = function($body) {
             this.resize(1460, 300);
-            console.log(this.options.gradient);
             if (this.options.gradient) {
                 var bodyBackground = window.parent.$("body").css("background-color");
                 var sheet = {
@@ -37,7 +36,7 @@
                     }
                 }
                 var style = this.utils.createStyleSheet(sheet);
-                //TOOO: make this part of createStyleSheet
+
                 this.$iframe.contents().find("head").append(style);
             }
         }
@@ -52,4 +51,4 @@
         image: {"type":"image", "default":""},
         gradient: {"type":"boolean", "default":true},
     });
-})(self.Ads);
+})(this.Ads);

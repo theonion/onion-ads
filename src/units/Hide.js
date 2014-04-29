@@ -24,4 +24,4 @@
         this.setMarkup = function($body) {}
     })
 
-})(self.Ads);
+})(this.Ads);

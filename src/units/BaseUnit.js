@@ -122,4 +122,4 @@
         pixel: {"type":"pixel", "default":""},
         clickthru: {"type":"url", "default": ""}
     };
-})(self.Ads);
+})(this.Ads);
