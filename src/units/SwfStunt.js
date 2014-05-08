@@ -33,6 +33,8 @@
             
             this.resize(this.options.width, this.options.height);
             setTimeout($.proxy(this.destroy, this), this.options.duration * 1000);
+
+            return {};
         }
     });
 

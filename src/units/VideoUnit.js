@@ -11,14 +11,16 @@
     - poster_url
 */      
 ;
-if (window.DMVAST) {
-    (function(Ads, vast) {
+
+    (function(Ads) {
         "use strict";
         Ads.units.VideoUnit = augment(Ads.units.BaseUnit, function(uber) {
 
             this.constructor = function(loader, $slot, $iframe, options) {
                 uber.constructor.call(this, loader, $slot, $iframe, options);
-                this.video_tag_selector = this.slotName + "_video";
+                
+                this.video_tag_selector = "#video";
+                
                 this.video_tag = this.createVideoTag(this.slotName);
 
                 // this is so dumb
@@ -262,5 +264,4 @@ if (window.DMVAST) {
             video_sound_pixel_tracker:  {"type": "pixel", "default": ""}
         });
 
-    })(this.Ads, DMVAST);
-}
+    })(this.Ads);

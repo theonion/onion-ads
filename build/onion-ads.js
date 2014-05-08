@@ -84,7 +84,7 @@ var FlashReplace = {
 
 */
 
-;(function(global) {
+;(function(global, videojs, vast) {
     "use strict";
     var Ads = Ads || function(options) {
         this.options = options;
@@ -145,9 +145,11 @@ var FlashReplace = {
         
         this.init(options);
     }
+    Ads.videojs = videojs;
+    Ads.vast = vast;
+    Ads.units = {};
     global.Ads = Ads;
-    global.Ads.units = {};
-})(this);;/*
+})(this, this.videojs, this.DMVAST);;/*
     Base for loader objects. If used directly, will only display placeholders.
 
     Defines a common interface for dealing with ads, regardless of where they come from.
@@ -162,18 +164,7 @@ var FlashReplace = {
         }
 
         this.getSlots = function() {
-            var slots = $(this.options.selector),
-                temp = {};
-            for (var i = 0; i < slots.length; i++) {
-                var slotname = $(slots[i]).attr("data-slotname");
-                if (temp[slotname]) {
-                    console.warn("Slotname: " + slotname + " has a duplicate");
-                    continue;
-                } else {
-                    temp[slotname] = slots[i];
-                }
-            }
-            return $.map(temp, function(el, index) {return el});
+            return $(this.options.selector);
         }
 
         this.insertIframe = function(element, contents) {
@@ -476,12 +467,14 @@ var FlashReplace = {
             if (this.$slot.width() < 100 || this.$slot.height() < 40) {
                 this.resize(300, 50);
             }
-            $body.css({
-                backgroundColor: "#AE81FF",
-                fontFamily: "sans-serif",
-                fontSize: "12px",
-                padding: "5px"
-            });
+            return { 
+                "body": {
+                    "background-color": "#AE81FF",
+                    "font-family": "sans-serif",
+                    "font-size": "12px",
+                    "padding": "5px"
+                    }
+                }
         }
 
         this.setMarkup = function($body) {
@@ -491,7 +484,7 @@ var FlashReplace = {
         }
 
         this.render = function() {
-            this.setStyle(this.$body);
+            this.utils.addStyles(this.setStyle(this.$body), this.$iframe);
             this.setMarkup(this.$body);
         }
 
@@ -523,25 +516,28 @@ var FlashReplace = {
                 }
                 return html;
             },
-            createStyleSheet: function(sheet) {
-                var style = document.createElement("style");
-                style.type = "text/css";
+            addStyles: function(styles, frame) {
+                if (!frame) {
+                    frame = window;
+                }
+                var styleNode = document.createElement("style");
+                styleNode.type = "text/css";
 
                 var css = "";
-                for (var selector in sheet) {
+                for (var selector in styles) {
                     var temp = "" + selector + '{';
-                    for (var rule in sheet[selector]) {
-                        temp += rule + ':' + sheet[selector][rule] + ';';
+                    for (var rule in styles[selector]) {
+                        temp += rule + ':' + styles[selector][rule] + ';';
                     }
                     temp += '}';
                     css += temp;
                 }
-                if (style.styleSheet) {
-                    style.styleSheet.cssText = css;
+                if (styleNode.styleSheet) {
+                    styleNode.styleSheet.cssText = css;
                 } else {
-                    style.appendChild(document.createTextNode(css));
+                    styleNode.appendChild(document.createTextNode(css));
                 }
-                return style;
+                frame.contents().find("head").append(styleNode);
             }
         }
     });
@@ -550,7 +546,178 @@ var FlashReplace = {
         pixel: {"type":"pixel", "default":""},
         clickthru: {"type":"url", "default": ""}
     };
-})(self.Ads);;/*
+})(this.Ads);;/*
+
+VideoUnit
+
+Base for all video ad units. On its own, displays 
+
+Options: 
+- pixel
+- clickthru
+- vast_url
+- poster_url
+*/      
+;(function(Ads) {
+    "use strict";
+    Ads.units.BaseVideoUnit = augment(Ads.units.BaseUnit, function(uber) {
+
+        this.constructor = function(loader, $slot, $iframe, options) {
+            uber.constructor.call(this, loader, $slot, $iframe, options);
+            
+            if (!Ads.vast || !Ads.videojs) {
+                console.warn("Missing DMVAST or VideoJS");
+                return; 
+            }
+
+            var self = this;
+            if (this.options.vast_url) {
+                Ads.vast.client.get(this.options.vast_url, function(res) {
+                    if (res) {
+                        self.parseVastResponse(res);
+                        self.data_loaded = true;
+                        if (self.built) {
+                            self.play();
+                        }
+                    }
+                });
+            }
+        };
+
+        this.render = function() {
+            uber.render.call(this);
+            if (this.data_loaded) {
+                this.play();
+            }
+        }
+
+        this.setStyle = function($body) {
+            var styles = {
+                ".vjs-control-bar":
+                     { "display":"none" },
+                ".vjs-tech":
+                    { "width": "100%" }
+                    
+                }
+            return styles;
+        };
+
+        this.setMarkup = function($body) {
+            $("#video" + this.slotName, $body).remove();
+            $body
+                .append('<video id="video-ad' + this.slotName + '" class="video-js vjs-default-skin"></video>')
+                .append('<a class="video-clickthru" target="_blank"></a>')
+                .append('<a class="video-sound"></a>');
+            // find the video tag
+            this.$video = $("video", $body)[0];
+        };
+
+
+        this.play = function() {
+            /*
+            some notes on video.js and vast
+              - in some browsers, you can't reuse the video player instantiated by videojs
+                as in functions like enlarge player. to get around this, video play completely
+                destroys the video container, creates a new one, and instantiates a new player
+              - in some browsers, timeUpdate can satisfy certain timing conditions multiple times.
+                (eg safari triggers VAST.play twice. there could be others!)
+            to prevent this, timing conditions uses .one which fires events only once
+            */
+            var self = this;
+
+
+            if(Ads.videojs.players["video-ad" + this.slotName]) {
+                this.player.dispose();
+                self.setMarkup();
+            }
+
+            var videojsOptions = {
+                preload: true,
+                controls: true,
+                width: 'auto',
+                height: 'auto',
+                plugins: { controls: false },
+            };
+
+
+            Ads.videojs(self.$video, videojsOptions, function() {
+                self.player = this;
+                /* Set up VAST events */
+                self.player.on('canplay', function() {self.vastTracker.load();});
+                
+                self.player.on('timeupdate', function() {
+                    if (isNaN(self.vastTracker.assetDuration)) {
+                        self.vastTracker.assetDuration = self.player.duration();
+                    };
+                    self.vastTracker.setProgress(self.player.currentTime());
+                });
+
+                self.player.on('play', function() {self.vastTracker.setPaused(false);});
+
+                self.player.on('pause', function() {self.vastTracker.setPaused(true);});
+
+                self.player.prevTime = 0;
+                self.player.src(self.sources);
+                self.player.volume(0);
+                self.player.play();
+            });
+        };
+
+        this.parseVastResponse = function(data) {
+
+            for (var adIdx = 0; adIdx < data.ads.length; adIdx++) {
+                var ad = data.ads[adIdx];
+                for (var creaIdx = 0; creaIdx < ad.creatives.length; creaIdx++) {
+                    var linearCreative = ad.creatives[creaIdx];
+                    if (linearCreative.type !== "linear") continue;
+                  
+                    if (linearCreative.mediaFiles.length) {
+                        this.sources = $.map(linearCreative.mediaFiles, function(f) {
+                            return {'type': f.mimeType, 'src': f.fileURL};
+                        });
+                        this.vastTracker = new Ads.vast.tracker(ad, linearCreative);
+
+                        var clickthrough;
+                        if (this.vastTracker.clickThroughURLTemplate) {
+                            clickthrough = Ads.vast.util.resolveURLTemplates(
+                            [this.vastTracker.clickThroughURLTemplate],
+                            {
+                                CACHEBUSTER: Math.round(Math.random() * 1.0e+10),
+                                CONTENTPLAYHEAD: this.vastTracker.progressFormated()
+                            }
+                          )[0];
+                        }
+                        clickthrough = clickthrough || "#";
+                        $('.video-clickthru', this.$body)
+                            .attr("href", clickthrough)
+                            .click(function(){
+                                var clicktrackers = this.vastTracker.clickTrackingURLTemplate;
+                                if (clicktrackers) {
+                                    this.vastTracker.trackURLs(clicktrackers);
+                                }
+                            });
+                        break;
+                    }
+                }
+                if (this.vastTracker) {
+                    break;
+                } else {
+                    // Inform ad server we can't find suitable media file for this ad
+                    Ads.vast.util.track(ad.errorURLTemplates, {ERRORCODE: 403});
+                }
+            }
+        };
+    });
+
+    Ads.units.BaseVideoUnit.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
+        vast_url: {"type": "url", "default":""},
+        top_right_icon: {"type": "text", "default": "volume-up"},
+        behavior: {"type": "select", "default": "", "options": ["enlarge"]},
+        video_expand_pixel_tracker: {"type": "pixel", "default": ""},
+        video_sound_pixel_tracker:  {"type": "pixel", "default": ""}
+    });
+
+})(this.Ads);;/*
     Standard skin
 
 
@@ -570,13 +737,13 @@ var FlashReplace = {
         }
 
         this.setStyle = function($body) {
-            this.resize(1460, 300);
-            console.log(this.options.gradient);
+            this.resize("100%", 300);
+            var styles = {};
             if (this.options.gradient) {
                 var bodyBackground = window.parent.$("body").css("background-color");
-                var sheet = {
+                styles = {
                     "a.wallpaper": {
-                        "background-position": "top",
+                        "background-position": "top center",
                         "background-repeat": "no-repeat",
                         "-webkit-box-shadow": "inset 0px -100px 100px -30px " + bodyBackground ,
                         "-mox-box-shadow":  "inset 0px -100px 100px -30px " + bodyBackground,
@@ -588,10 +755,9 @@ var FlashReplace = {
                         "display":"block"
                     }
                 }
-                var style = this.utils.createStyleSheet(sheet);
-                //TOOO: make this part of createStyleSheet
-                this.$iframe.contents().find("head").append(style);
+                
             }
+            return styles;
         }
 
         this.setMarkup = function($body) {
@@ -604,7 +770,7 @@ var FlashReplace = {
         image: {"type":"image", "default":""},
         gradient: {"type":"boolean", "default":true},
     });
-})(self.Ads);;/*
+})(this.Ads);;/*
     
     SWF Unit
 
@@ -694,6 +860,8 @@ var FlashReplace = {
             
             this.resize(this.options.width, this.options.height);
             setTimeout($.proxy(this.destroy, this), this.options.duration * 1000);
+
+            return {};
         }
     });
 
@@ -704,336 +872,51 @@ var FlashReplace = {
         blocking: {"type":"boolean", "default": true},
         clickTagName: {"type":"text", "default":"clickTag"}
     });
-})(self.Ads);;/*
-    
-   VideoUnit
-
-    Base for all video ad units. On its own, displays 
-
-    Options: 
-    - pixel
-    - clickthru
-    - vast_url
-    - poster_url
-*/      
-;
-if (window.DMVAST) {
-
-(function(Ads, vast) {
-    "use strict";
-    Ads.units.VideoUnit = augment(Ads.units.BaseUnit, function(uber) {
-
-        this.constructor = function(loader, $slot, $iframe, options) {
-            uber.constructor.call(this, loader, $slot, $iframe, options);
-            this.video_tag_selector = this.slotName + "_video";
-            this.video_tag = this.createVideoTag(this.slotName);
-
-            // this is so dumb
-            var behaviors = {"enlarge":1, "soundOn": 1};
-
-            this.behavior = behaviors[this.options.behavior];
-            if (behaviors[this.options.behavior]) {
-                this.behavior = this.options.behavior;
-            }
-
-            var video_unit = this;
-            if (this.options.vast_url) {
-                vast.client.get(this.options.vast_url, function(res) {
-                    if (res) {
-                        video_unit.setupVAST(res);
-                        video_unit.data_loaded = true;
-                        if (video_unit.built) {
-                            video_unit.play(video_unit.options.volume);
-                        }
-                    }
-                });
-            }
-        };
-
-        this.render = function() {
-            uber.render.call(this);
-            if (this.data_loaded) {
-                this.play();
-            }
-        }
-
-        this.setStyle = function($body) {
-
-        };
-
-        this.setMarkup = function($body) {
-            this.video_anchor = $("<a>")
-                .attr({
-                    "href": '#',
-                    "target": "_blank"
-                });
-            this.video_anchor.append(this.video_tag);
-            $body.append(this.video_anchor);
-        };
-
-        this.createVideoTag = function (name) {
-            return $('<video>')
-                .attr('id', name + '_video')
-                .addClass('video-js vjs-default-skin ad-' + name);
-        };
-
-        this.play = function() {
-            /*
-            some notes on video.js and vast
-              - in some browsers, you can't reuse the video player instantiated by videojs
-                as in functions like enlarge player. to get around this, video play completely
-                destroys the video container, creates a new one, and instantiates a new player
-              - in some browsers, timeUpdate can satisfy certain timing conditions multiple times.
-                (eg safari triggers VAST.play twice. there could be others!)
-            to prevent this, timing conditions uses .one which fires events only once
-              - blah blah blah
-            */
-            var video_unit = this;
-            if(videojs.players[this.video_tag_selector]) {
-                this.player.dispose();
-                var videotag = this.createVideoTag(video_unit.slotName);
-                $(this.video_anchor).prepend(videotag);
-            }
-            var videojs_options = {
-                preload: true,
-                controls: false,
-                width: 'auto',
-                height: 'auto'
-            };
-
-            var video_element = this.$body.find('#'+this.video_tag_selector)[0];
-            if (video_element) {
-                videojs(video_element, videojs_options, function() {
-                    video_unit.player = this;
-                    video_unit.player.on('canplay', function() {video_unit.vastTracker.load();});
-                    video_unit.player.on('timeupdate', function() {
-                        if (isNaN(video_unit.vastTracker.assetDuration)) {
-                            video_unit.vastTracker.assetDuration = video_unit.player.duration();
-                        };
-                        video_unit.vastTracker.setProgress(video_unit.player.currentTime());
-                    });
-                    video_unit.player.on('play', function() {video_unit.vastTracker.setPaused(false);});
-                    video_unit.player.on('pause', function() {video_unit.vastTracker.setPaused(true);});
-                    video_unit.startPlayer(this, video_unit.options.volume);
-                });
-            }
-        };
-
-        this.startPlayer = function(player, volume) {
-            try {
-                player.controlBar.el().parentNode.removeChild(player.controlBar.el());
-                player.loadingSpinner.el().parentNode.removeChild(player.loadingSpinner.el());
-            } catch(e) {}
-
-            //add whatever icons, do unit-specific behavior, etc
-            if (this.behavior) this[this.behavior]();
-            player.prevTime = 0;
-            player.src(this.sources);
-            player.volume(volume);
-            player.play();
-        };
-
-
-        this.enlarge = function() {
-            //video player with enlarge button during play, repeat button on end
-            this.player.on('ended', $.proxy(this.end, this));
-            var container = this.$body.find("#" + this.video_tag_selector);
-            var current_icon = this.current_icon || this.options.top_right_icon;
-            var top_right_icon = $("<i class='fa fa-" + current_icon + "'></i>");
-
-            container.append(top_right_icon);
-            container.on('click', 'i.fa-' + this.options.top_right_icon, $.proxy(this.enlargePlayer, this));
-            container.on('click', 'i.fa-compress', $.proxy(this.minimize, this));
-            container.on('click', 'i.fa-repeat', $.proxy(this.repeat, this));
-        };
-
-        this.enlargePlayer = function() {
-            this.current_icon = 'compress';
-            this.$body.find("#" + this.video_tag_selector).find("i")
-                .removeClass()
-                .addClass('fa fa-compress');
-            $(document).keyup(function(e){if (e.which == 27) { 
-                $.proxy(this.minimize, this);
-            }});
-            this.$body.find("#" + this.video_tag_selector).parent().addClass('enlarged');
-            this.play(1);
-            this.firePixel(this.options.video_expand_pixel_tracker);
-            return false;
-        };
-
-        this.soundOn = function() {
-            var container = this.$body.find("#" + this.video_tag_selector);
-            var enlargeicon = $("<i class='fa fa-volume-up'></i>");
-            container.append(enlargeicon);
-            container.on('click', 'i.fa-volume-up', $.proxy(this.setSoundOn, this));
-        };
-
-        this.setSoundOn = function() {
-            this.player.currentTime(0);
-            this.player.volume(100);
-            this.player.play();
-            this.firePixel(this.options.video_sound_pixel_tracker);
-            return false;
-        };
-
-        this.repeat = function() {
-            this.$body.find("#" + this.video_tag_selector).find("img.poster").remove();
-            return this.enlargePlayer();
-        };
-
-        this.minimize = function() {
-            this.$body.find("#" + this.video_tag_selector).parent().removeClass('enlarged');
-            this.play(0);
-            this.$body.find("#" + this.video_tag_selector).find("i")
-                .removeClass()
-                .addClass('fa fa-' + this.options.top_right_icon);
-            $(document).off("keyup");
-            return false;
-        };
-
-        this.destroy = function() {
-            this.player.dispose();
-            uber.destroy.call(this);
-        };
-
-        this.end = function() {
-            this.$body.find("#" + this.video_tag_selector + " img").remove();
-            this.$body.find("#" + this.video_tag_selector).parent().removeClass('enlarged');
-            this.$body.find("#" + this.video_tag_selector).find("i")
-                .removeClass()
-                .addClass('fa fa-repeat');
-            if(this.options.poster_url){
-                var img = $(
-                    "<img class='afns-ad-element afns-ad-" +
-                    this.slotName +
-                    "_poster poster' src='" +
-                    this.options.poster_url +
-                    "'>");
-                this.$body.find("#" + this.video_tag_selector).append(img);
-            }
-        };
-
-        this.setupVAST = function(data) {
-            for (var adIdx = 0; adIdx < data.ads.length; adIdx++) {
-                var ad = data.ads[adIdx];
-                for (var creaIdx = 0; creaIdx < ad.creatives.length; creaIdx++) {
-                    var linearCreative = ad.creatives[creaIdx];
-                    if (linearCreative.type !== "linear") continue;
-                  
-                    if (linearCreative.mediaFiles.length) {
-                        this.sources = $.map(linearCreative.mediaFiles, function(f) {
-                            return {'type': f.mimeType, 'src': f.fileURL};
-                        });
-                        this.vastTracker = new vast.tracker(ad, linearCreative);
-
-                        var clickthrough;
-                        if (this.vastTracker.clickThroughURLTemplate) {
-                          clickthrough = vast.util.resolveURLTemplates(
-                            [this.vastTracker.clickThroughURLTemplate],
-                            {
-                                CACHEBUSTER: Math.round(Math.random() * 1.0e+10),
-                                CONTENTPLAYHEAD: this.vastTracker.progressFormated()
-                            }
-                          )[0];              
-                        }
-                        clickthrough = clickthrough || "#";
-
-                        $(this.video_anchor)
-                            .attr("href", clickthrough)
-                            .click(function(){
-                                var clicktrackers = this.vastTracker.clickTrackingURLTemplate;
-                                if (clicktrackers) {
-                                    this.vastTracker.trackURLs(clicktrackers);
-                                }
-                            });
-
-                        break;
-                    }
-                }
-                if (this.vastTracker) {
-                    break;
-                } else {
-                    // Inform ad server we can't find suitable media file for this ad
-                    vast.util.track(ad.errorURLTemplates, {ERRORCODE: 403});
-                }
-            }
-        };
-    })
-    
-    Ads.units.VideoUnit.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
-        vast_url: {"type": "url", "default":""},
-        volume: {"type": "number", "default": 0},
-        top_right_icon: {"type": "text", "default": "volume-up"},
-        behavior: {"type": "select", "default": "", "options": ["enlarge"]},
-        video_expand_pixel_tracker: {"type": "pixel", "default": ""},
-        video_sound_pixel_tracker:  {"type": "pixel", "default": ""}
-    });
-
-})(self.Ads, DMVAST);
-
-};/*
+})(this.Ads);;/*
    
 */      
 ;(function(Ads) {
     "use strict";
-    Ads.units.VideoSkin = augment(Ads.units.VideoUnit, function(uber) {
+    Ads.units.VideoSkin = augment(Ads.units.BaseVideoUnit, function(uber) {
 
         this.constructor = function(loader, $slot, $iframe, options) {
             uber.constructor.call(this, loader, $slot, $iframe, options);
         }
 
         this.setStyle = function($body) {
-            this.resize(1460, 460);
-
-            var sheet = {
-                "a.videoskin": {
-                    position: "absolute",
-                    height: "460px",
-                    width: "100%",
-                    "background-position": "top",
-                    "background-repeat": "no-repeat",
-                    "background-image": "url("+this.options.skin_image_url+")",
-                    "z-index": 1
-                },
-                ".video-js .vjs-tech": {
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%"
-                }
+            this.resize("100%", 460);
+            var styles = uber.setStyle.call($body);
+            styles["a.videoskin"] = {
+                "position": "absolute",
+                "height": "460px",
+                "width": "100%",
+                "background-position": "top center",
+                "background-repeat": "no-repeat",
+                "background-image": "url("+this.options.skin_image_url+")",
+                "z-index": 1
             };
-            sheet["a.enlarged > div#"+this.video_tag_selector] = {
-                left: 0,
-                width: "692px!important",
-                height: "390px!important"
+            styles[".video-clickthru, .video-js"] = {
+                "width": "352px",
+                "height": "198px",
+                "position": "absolute",
+                "z-index": "2",
+                "left": "50%",
+                "top": "40px",
+                "margin-left": "140px"
+            }
+            styles[".video-clickthru"] = {
+                "z-index": "3",
+                "display": "block"
+            }
+            styles[".video-js .vjs-tech"] = {
+                "width": "100%",
+                "height": "100%"
             };
-            sheet["a > div#"+this.video_tag_selector] = {
-                width: "346px !important",
-                height: "195px !important",
-                margin: "46px auto 0",
-                position: "relative",
-                padding: 0,
-                top: "0px",
-                left: "317px",
-                "overflow-y": "hidden",
-                "z-index": 2
-            };
-            sheet["a > div#"+this.video_tag_selector+" i"] = {
-                position: "absolute",
-                top: 0,
-                right: "2px",
-                color: "#fefefe",
-                "z-index": 1,
-                "font-size": "30px"
-            };
-            sheet["a > video#"+this.video_tag_selector] = {
-                display: "none"
-            };
+        
 
             if (this.options.gradient) {
                 var bodyBackground = window.parent.$("body").css("background-color");
-                sheet["a.wallpaper"] =  {
+                styles["a.wallpaper"] =  {
                     "background-position": "top",
                     "background-repeat": "no-repeat",
                     "-webkit-box-shadow": "inset 0px -100px 100px -30px " + bodyBackground ,
@@ -1046,11 +929,10 @@ if (window.DMVAST) {
                 }
             }
 
-            var style = this.utils.createStyleSheet(sheet);
             this.$iframe.contents().find("head").append(
-                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'>"
+                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylestyles'>"
             )
-            this.$iframe.contents().find("head").append(style);
+            return styles;
         }
 
         this.setMarkup = function($body) {
@@ -1062,9 +944,9 @@ if (window.DMVAST) {
         };
     })
 
-    Ads.units.VideoSkin.defaults = $.extend({}, Ads.units.VideoUnit.defaults, {
+    Ads.units.VideoSkin.defaults = $.extend({}, Ads.units.BaseVideoUnit.defaults, {
         image: {"type": "image", "default": ""},
         gradient: {"type":"boolean", "default":true}
     });
 
-})(self.Ads);
+})(this.Ads);

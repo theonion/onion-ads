@@ -48,12 +48,14 @@
             if (this.$slot.width() < 100 || this.$slot.height() < 40) {
                 this.resize(300, 50);
             }
-            $body.css({
-                backgroundColor: "#AE81FF",
-                fontFamily: "sans-serif",
-                fontSize: "12px",
-                padding: "5px"
-            });
+            return { 
+                "body": {
+                    "background-color": "#AE81FF",
+                    "font-family": "sans-serif",
+                    "font-size": "12px",
+                    "padding": "5px"
+                    }
+                }
         }
 
         this.setMarkup = function($body) {
@@ -63,7 +65,7 @@
         }
 
         this.render = function() {
-            this.setStyle(this.$body);
+            this.utils.addStyles(this.setStyle(this.$body), this.$iframe);
             this.setMarkup(this.$body);
         }
 
@@ -95,25 +97,28 @@
                 }
                 return html;
             },
-            createStyleSheet: function(sheet) {
-                var style = document.createElement("style");
-                style.type = "text/css";
+            addStyles: function(styles, frame) {
+                if (!frame) {
+                    frame = window;
+                }
+                var styleNode = document.createElement("style");
+                styleNode.type = "text/css";
 
                 var css = "";
-                for (var selector in sheet) {
+                for (var selector in styles) {
                     var temp = "" + selector + '{';
-                    for (var rule in sheet[selector]) {
-                        temp += rule + ':' + sheet[selector][rule] + ';';
+                    for (var rule in styles[selector]) {
+                        temp += rule + ':' + styles[selector][rule] + ';';
                     }
                     temp += '}';
                     css += temp;
                 }
-                if (style.styleSheet) {
-                    style.styleSheet.cssText = css;
+                if (styleNode.styleSheet) {
+                    styleNode.styleSheet.cssText = css;
                 } else {
-                    style.appendChild(document.createTextNode(css));
+                    styleNode.appendChild(document.createTextNode(css));
                 }
-                return style;
+                frame.contents().find("head").append(styleNode);
             }
         }
     });

@@ -18,12 +18,13 @@
         }
 
         this.setStyle = function($body) {
-            this.resize(1460, 300);
+            this.resize("100%", 300);
+            var styles = {};
             if (this.options.gradient) {
                 var bodyBackground = window.parent.$("body").css("background-color");
-                var sheet = {
+                styles = {
                     "a.wallpaper": {
-                        "background-position": "top",
+                        "background-position": "top center",
                         "background-repeat": "no-repeat",
                         "-webkit-box-shadow": "inset 0px -100px 100px -30px " + bodyBackground ,
                         "-mox-box-shadow":  "inset 0px -100px 100px -30px " + bodyBackground,
@@ -35,10 +36,9 @@
                         "display":"block"
                     }
                 }
-                var style = this.utils.createStyleSheet(sheet);
-
-                this.$iframe.contents().find("head").append(style);
+                
             }
+            return styles;
         }
 
         this.setMarkup = function($body) {

@@ -19,6 +19,7 @@
         this.setStyle = function($body) {
             this.resize(0, 0);
             this.$iframe.css({display:"none"}};
+            return {};
         }
 
         this.setMarkup = function($body) {}

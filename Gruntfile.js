@@ -18,10 +18,10 @@ module.exports = function(grunt) {
                     'src/loaders/DfpLoader.js',
                     'src/loaders/JsonLoader.js',
                     'src/units/BaseUnit.js',
+                    'src/units/BaseVideoUnit.js',
                     'src/units/Skin.js',
                     'src/units/Swf.js',
                     'src/units/SwfStunt.js',
-                    'src/units/VideoUnit.js',
                     'src/units/VideoSkin.js'
                     ],
                 dest: 'build/<%= pkg.name %>.js'

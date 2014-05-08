@@ -7,7 +7,7 @@
 
 */
 
-;(function(global) {
+;(function(global, videojs, vast) {
     "use strict";
     var Ads = Ads || function(options) {
         this.options = options;
@@ -68,6 +68,8 @@
         
         this.init(options);
     }
+    Ads.videojs = videojs;
+    Ads.vast = vast;
+    Ads.units = {};
     global.Ads = Ads;
-    global.Ads.units = {};
-})(this);
+})(this, this.videojs, this.DMVAST);
