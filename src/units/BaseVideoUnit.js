@@ -29,7 +29,7 @@ Options:
                         self.parseVastResponse(res);
                         self.data_loaded = true;
                         if (self.built) {
-                            self.play();
+                            self.play(0);
                         }
                     }
                 });
@@ -39,33 +39,83 @@ Options:
         this.render = function() {
             uber.render.call(this);
             if (this.data_loaded) {
-                this.play();
+                this.play(0);
             }
         }
 
         this.setStyle = function($body) {
             var styles = {
-                ".vjs-control-bar":
-                     { "display":"none" },
-                ".vjs-tech":
-                    { "width": "100%" }
-                    
+
+                ".vjs-control-bar": { 
+                    "display":"none" 
+                },
+                ".video-ad": {
+                    "position":"relative",
+                    "width": "300px",
+                    "height": "250px"
+                },
+                ".vjs-tech": { "width": "100%" 
+                },
+                ".video-clickthru, .video-js, .vjs-poster": {
+                    "width": "100%",
+                    "height": "100%",
+                    "position":"absolute",
+                    "display":"block",
+                    "top": "0px"
+                },
+                ".video-js": {
+                    "z-index": "1"
+                },
+                ".video-clickthru": {
+                    "z-index":"2"
+                },
+                ".video-sound": {
+                    "z-index": "3",
+                    "display": "block",
+                    "position": "absolute",
+                    "width": "20px",
+                    "height": "20px",
+                    "padding": "10px",
+                    "top": "0px",
+                    "right": "0px",
+                    "background-color": "blue",
+                    "cursor": "pointer"
+                },
+                ".vjs-paused .vjs-poster": {
+                    "z-index":"2",
+                    "display":"block !important"
+                }, 
+                ".unmuted + .video-sound": {
+                    "background-color": "green"
+                },
+                ".vjs-paused + .video-sound": {
+                    "background-color": "red"
                 }
+                
+            }
             return styles;
         };
 
         this.setMarkup = function($body) {
-            $("#video" + this.slotName, $body).remove();
-            $body
+            $(".video-ad", $body).html("");
+            $body.append('<div class="video-ad"></div>');
+            $(".video-ad", $body)
                 .append('<video id="video-ad' + this.slotName + '" class="video-js vjs-default-skin"></video>')
-                .append('<a class="video-clickthru" target="_blank"></a>')
-                .append('<a class="video-sound"></a>');
+                .append('<a class="video-sound"></a>')
+                .append('<a class="video-clickthru" target="_blank"></a>');
+                
             // find the video tag
             this.$video = $("video", $body)[0];
+
+            // register click event on play w/ sound button
+            $(".video-sound", $body).click($.proxy(this.soundButtonClicked, this));
+
         };
 
 
-        this.play = function() {
+        /* Video stuff */
+
+        this.play = function(volume) {
             /*
             some notes on video.js and vast
               - in some browsers, you can't reuse the video player instantiated by videojs
@@ -80,19 +130,21 @@ Options:
 
             if(Ads.videojs.players["video-ad" + this.slotName]) {
                 this.player.dispose();
-                self.setMarkup();
+                self.setMarkup(this.$body);
             }
 
-            var videojsOptions = {
+            var options = {
                 preload: true,
                 controls: true,
                 width: 'auto',
                 height: 'auto',
                 plugins: { controls: false },
+                poster: this.options.poster
             };
 
-
-            Ads.videojs(self.$video, videojsOptions, function() {
+            
+            // Initialize Player here. 
+            Ads.videojs(self.$video, options, function() {
                 self.player = this;
                 /* Set up VAST events */
                 self.player.on('canplay', function() {self.vastTracker.load();});
@@ -108,12 +160,39 @@ Options:
 
                 self.player.on('pause', function() {self.vastTracker.setPaused(true);});
 
+                self.player.on('ended', $.proxy(self.onEnd, self));
+
+
+
                 self.player.prevTime = 0;
                 self.player.src(self.sources);
-                self.player.volume(0);
+                self.player.volume(volume);
                 self.player.play();
             });
         };
+
+        this.soundButtonClicked = function() {
+            
+            if (!$(".video-js", this.$body).hasClass("unmuted")) {
+                $(".video-js", this.$body).addClass("unmuted");
+                this.play(80);
+            }
+            else {
+                $(".video-js", this.$body).removeClass("unmuted");
+                this.play(0);
+            }
+        }
+
+        this.onEnd = function() {
+            // video done
+            
+            //put in poster
+            //$(".video-clickthru", this.$body).append('<img src="' + this.options.poster + '">');
+
+            // change icon to replay 
+
+            //$(".video-sound span").removeClass("fa-
+        }
 
         this.parseVastResponse = function(data) {
 
@@ -140,6 +219,7 @@ Options:
                           )[0];
                         }
                         clickthrough = clickthrough || "#";
+                        console.log("clickthru", clickthrough);
                         $('.video-clickthru', this.$body)
                             .attr("href", clickthrough)
                             .click(function(){
@@ -163,10 +243,8 @@ Options:
 
     Ads.units.BaseVideoUnit.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
         vast_url: {"type": "url", "default":""},
-        top_right_icon: {"type": "text", "default": "volume-up"},
-        behavior: {"type": "select", "default": "", "options": ["enlarge"]},
-        video_expand_pixel_tracker: {"type": "pixel", "default": ""},
-        video_sound_pixel_tracker:  {"type": "pixel", "default": ""}
+        poster: {"type": "image", "default":""}
+
     });
 
 })(this.Ads);

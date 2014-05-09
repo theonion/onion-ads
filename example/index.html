@@ -49,7 +49,6 @@
             var ads = new Ads({
                 //options
                 selector: ".ad",
-                flashReplace: "http://www.theonion.com/static/ads/flashreplace.js",
                 data: [
                     {
                         slotname: 'wallpaper',
@@ -57,7 +56,7 @@
                     },
                     {
                         slotname: 'wallpaper2',
-                        value: '<div data-type="VideoSkin" data-poster_url=http://placehold.it/352x198" data-skin_image_url="http://videos.theonion.com/ads/2014/04/honda_av-video-skin_1460x460_v5_0404.jpg" data-skin_pixel_tracker="http://placehold.it/1x1" data-vast_url="http://videoads.theonion.com/vast/165.xml" data-video_pixel_tracker="http://placehold.it/1x1"></div>'
+                        value: '<div data-type="VideoSkin" data-poster="http://placehold.it/352x198" data-clickthru="http://www.google.com/"  data-skin_image_url="http://videos.theonion.com/ads/2014/04/honda_av-video-skin_1460x460_v5_0404.jpg" data-skin_pixel_tracker="http://placehold.it/1x1" data-vast_url="http://videoads.theonion.com/vast/165.xml" data-video_pixel_tracker="http://placehold.it/1x1"></div>'
                     },
                     {
                         slotname: 'header',
@@ -77,7 +76,7 @@
                     // },
                     {
                         slotname: 'video',
-                        value: '<div data-type="BaseVideoUnit" data-vast_url="http://videoads.theonion.com/vast/176.xml"></div>'
+                        value: '<div data-type="BaseVideoUnit" data-vast_url="http://videoads.theonion.com/vast/176.xml" data-poster="http://placehold.it/352x198"></div>'
                     }
                 ]
             });

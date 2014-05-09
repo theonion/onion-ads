@@ -21,7 +21,9 @@
                 "background-image": "url("+this.options.skin_image_url+")",
                 "z-index": 1
             };
-            styles[".video-clickthru, .video-js"] = {
+
+
+            styles[".video-ad"] = {
                 "width": "352px",
                 "height": "198px",
                 "position": "absolute",
@@ -30,14 +32,8 @@
                 "top": "40px",
                 "margin-left": "140px"
             }
-            styles[".video-clickthru"] = {
-                "z-index": "3",
-                "display": "block"
-            }
-            styles[".video-js .vjs-tech"] = {
-                "width": "100%",
-                "height": "100%"
-            };
+
+
         
 
             if (this.options.gradient) {
@@ -63,7 +59,7 @@
 
         this.setMarkup = function($body) {
             var html = this.utils.template(
-                '<a target="_blank" href="{{skin_clickthru_url}}" class="wallpaper videoskin"></a>',
+                '<a target="_blank" href="{{clickthru}}" class="wallpaper videoskin"></a>',
                 this.options );
             $body.html(html);
             uber.setMarkup.call(this, $body);
@@ -72,6 +68,7 @@
 
     Ads.units.VideoSkin.defaults = $.extend({}, Ads.units.BaseVideoUnit.defaults, {
         image: {"type": "image", "default": ""},
+        clickthru: {"type": "url", "default": ""},
         gradient: {"type":"boolean", "default":true}
     });
 
