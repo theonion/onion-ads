@@ -110,6 +110,7 @@ var FlashReplace = {
             }
             this.loader = new Ads[loaderType](options);
             this.loader.load();
+
         }
 
 
@@ -122,6 +123,7 @@ var FlashReplace = {
             this.init(this.options);
         }
 
+        // refresh just reloads the contents of the slots.
         this.refresh = function() {
             this.loader.refresh();
         }
@@ -161,6 +163,16 @@ var FlashReplace = {
             this.options = options;
             this.slots = this.getSlots();
             this.units = {};
+            this.refreshCount = 0;
+
+            //initialize events to watch for idle. 
+            var self = this;
+            $(window.top).bind("mousemove touchmove focus", function() {
+                self.refreshCount = 0;
+            });
+            if (this.options.onLoad) {
+                this.options.onLoad()
+            }
         }
 
         this.getSlots = function() {
@@ -195,7 +207,6 @@ var FlashReplace = {
         /*  Load is normally the method used to fetch ads from a server.
             In the case of the DefaultLoader, it just inserts iframes with the base unit.  */
         this.load = function(targeting) {
-            console.log("Default Loader: loading");
             for (var i=0; i < this.slots.length; i++) {
                 this.insertIframe(this.slots[i], "<div data-type=\"BaseUnit\"></div>");
             }
@@ -248,12 +259,23 @@ var FlashReplace = {
             for (var i = 0; i < slots.length; i++) {
                 this.units[slots[i]].build()
             }
+
+            if (this.options.refreshInterval > 0) {
+                clearTimeout(this.refreshTimeout);
+                this.refreshTimeout = setTimeout($.proxy(this.refresh, this), this.options.refreshInterval * 60 * 1000);
+            }
         };
 
 
         this.refresh = function() {
-            this.destroyUnits();
-            this.load();
+            this.refreshCount++;
+            if (this.refreshCount <= this.options.refreshLimit) {
+                this.destroyUnits();
+                this.load();
+                if (this.options.onRefresh) {
+                    this.options.onRefresh(this.refreshCount)
+                }
+            }
         }
 
         this.destroyUnits = function() {
@@ -427,6 +449,7 @@ var FlashReplace = {
             this.options = $.extend({}, this.getDefaults(), options);
             this.loader = loader;
             this.$iframe = $iframe;
+            this.$head = $("head", $iframe.contents()),
             this.$body = $("body", $iframe.contents()),
             this.$slot = $slot,
             this.slotName = $slot.attr("data-slotname"),
@@ -594,7 +617,7 @@ Options:
         this.setStyle = function($body) {
             var styles = {
 
-                ".vjs-control-bar": { 
+                ".vjs-controls-disabled .vjs-control-bar": { 
                     "display":"none" 
                 },
                 ".video-ad": {
@@ -626,35 +649,71 @@ Options:
                     "padding": "10px",
                     "top": "0px",
                     "right": "0px",
-                    "background-color": "blue",
                     "cursor": "pointer"
                 },
                 ".vjs-paused .vjs-poster": {
                     "z-index":"2",
-                    "display":"block !important"
-                }, 
-                ".unmuted + .video-sound": {
-                    "background-color": "green"
+                    "display":"block !important",
+                    "background-position": "center",
+                    "background-size":"cover"
                 },
-                ".vjs-paused + .video-sound": {
-                    "background-color": "red"
-                }
-                
+                ".video-sound i": {
+                    "color": "#eeeeee",
+                    "text-align":"center",
+                    "font-size":"20px",
+
+                },
+                ".video-sound i:hover": {
+                    "color": "#ffffff"
+                },
+                ".video-sound i.fa-volume-off": {
+                    "display":"block"
+                },
+
+                ".video-sound i.fa-volume-up": {
+                    "display": "none"
+                },
+
+                ".unmuted + .video-sound i.fa-volume-off": {
+                    "display": "none"
+                },
+
+                ".unmuted + .video-sound i.fa-volume-up": {
+                    "display": "block"
+                },
+                ".done + .video-sound i.fa-volume-up, .done + .video-sound i.fa-volume-off": {
+                    "display": "none"
+                },
+                ".video-sound i.fa-repeat" : {
+                    "display":"none"
+                },
+                ".done + .video-sound i.fa-repeat": {
+                    "display": "block"
+                },
+
+
             }
             return styles;
         };
+
+        this.destroy = function() {
+            this.player.dispose();
+            uber.destroy.call(this);
+        }
 
         this.setMarkup = function($body) {
             $(".video-ad", $body).html("");
             $body.append('<div class="video-ad"></div>');
             $(".video-ad", $body)
                 .append('<video id="video-ad' + this.slotName + '" class="video-js vjs-default-skin"></video>')
-                .append('<a class="video-sound"></a>')
+                .append('<a class="video-sound"><i class="fa fa-repeat"></i><i class="fa fa-volume-off"></i><i class="fa fa-volume-up"></i></a>')
                 .append('<a class="video-clickthru" target="_blank"></a>');
                 
             // find the video tag
             this.$video = $("video", $body)[0];
-
+            this.$head.append(
+                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'></link>"
+            )
             // register click event on play w/ sound button
             $(".video-sound", $body).click($.proxy(this.soundButtonClicked, this));
 
@@ -687,7 +746,8 @@ Options:
                 width: 'auto',
                 height: 'auto',
                 plugins: { controls: false },
-                poster: this.options.poster
+                poster: this.options.poster,
+                muted: true
             };
 
             
@@ -715,31 +775,28 @@ Options:
                 self.player.prevTime = 0;
                 self.player.src(self.sources);
                 self.player.volume(volume);
+                if (volume > 0) {
+                    console.log(volume);
+                    $(".video-js", self.$body).addClass("unmuted");
+                }
                 self.player.play();
             });
         };
 
         this.soundButtonClicked = function() {
-            
             if (!$(".video-js", this.$body).hasClass("unmuted")) {
-                $(".video-js", this.$body).addClass("unmuted");
                 this.play(80);
             }
             else {
-                $(".video-js", this.$body).removeClass("unmuted");
-                this.play(0);
+                //$(".video-js", this.$body).removeClass("unmuted");
+                this.player.volume(0);
+                $(".video-js", this.$body).removeClass("unmuted")
             }
         }
 
         this.onEnd = function() {
             // video done
-            
-            //put in poster
-            //$(".video-clickthru", this.$body).append('<img src="' + this.options.poster + '">');
-
-            // change icon to replay 
-
-            //$(".video-sound span").removeClass("fa-
+            $(".video-js", this.$body).addClass("done");
         }
 
         this.parseVastResponse = function(data) {
@@ -767,7 +824,6 @@ Options:
                           )[0];
                         }
                         clickthrough = clickthrough || "#";
-                        console.log("clickthru", clickthrough);
                         $('.video-clickthru', this.$body)
                             .attr("href", clickthrough)
                             .click(function(){
@@ -792,7 +848,6 @@ Options:
     Ads.units.BaseVideoUnit.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
         vast_url: {"type": "url", "default":""},
         poster: {"type": "image", "default":""}
-
     });
 
 })(this.Ads);;/*
@@ -985,9 +1040,6 @@ Options:
                 "margin-left": "140px"
             }
 
-
-        
-
             if (this.options.gradient) {
                 var bodyBackground = window.parent.$("body").css("background-color");
                 styles["a.wallpaper"] =  {
@@ -1003,9 +1055,7 @@ Options:
                 }
             }
 
-            this.$iframe.contents().find("head").append(
-                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylestyles'>"
-            )
+
             return styles;
         }
 
@@ -1020,8 +1070,6 @@ Options:
 
     Ads.units.VideoSkin.defaults = $.extend({}, Ads.units.BaseVideoUnit.defaults, {
         image: {"type": "image", "default": ""},
-        clickthru: {"type": "url", "default": ""},
         gradient: {"type":"boolean", "default":true}
     });
-
 })(this.Ads);

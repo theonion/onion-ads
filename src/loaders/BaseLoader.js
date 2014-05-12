@@ -10,6 +10,16 @@
             this.options = options;
             this.slots = this.getSlots();
             this.units = {};
+            this.refreshCount = 0;
+
+            //initialize events to watch for idle. 
+            var self = this;
+            $(window.top).bind("mousemove touchmove focus", function() {
+                self.refreshCount = 0;
+            });
+            if (this.options.onLoad) {
+                this.options.onLoad()
+            }
         }
 
         this.getSlots = function() {
@@ -44,7 +54,6 @@
         /*  Load is normally the method used to fetch ads from a server.
             In the case of the DefaultLoader, it just inserts iframes with the base unit.  */
         this.load = function(targeting) {
-            console.log("Default Loader: loading");
             for (var i=0; i < this.slots.length; i++) {
                 this.insertIframe(this.slots[i], "<div data-type=\"BaseUnit\"></div>");
             }
@@ -97,12 +106,23 @@
             for (var i = 0; i < slots.length; i++) {
                 this.units[slots[i]].build()
             }
+
+            if (this.options.refreshInterval > 0) {
+                clearTimeout(this.refreshTimeout);
+                this.refreshTimeout = setTimeout($.proxy(this.refresh, this), this.options.refreshInterval * 60 * 1000);
+            }
         };
 
 
         this.refresh = function() {
-            this.destroyUnits();
-            this.load();
+            this.refreshCount++;
+            if (this.refreshCount <= this.options.refreshLimit) {
+                this.destroyUnits();
+                this.load();
+                if (this.options.onRefresh) {
+                    this.options.onRefresh(this.refreshCount)
+                }
+            }
         }
 
         this.destroyUnits = function() {

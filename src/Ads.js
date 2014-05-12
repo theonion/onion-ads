@@ -33,6 +33,7 @@
             }
             this.loader = new Ads[loaderType](options);
             this.loader.load();
+
         }
 
 
@@ -45,6 +46,7 @@
             this.init(this.options);
         }
 
+        // refresh just reloads the contents of the slots.
         this.refresh = function() {
             this.loader.refresh();
         }

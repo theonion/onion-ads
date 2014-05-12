@@ -8,6 +8,7 @@
             this.options = $.extend({}, this.getDefaults(), options);
             this.loader = loader;
             this.$iframe = $iframe;
+            this.$head = $("head", $iframe.contents()),
             this.$body = $("body", $iframe.contents()),
             this.$slot = $slot,
             this.slotName = $slot.attr("data-slotname"),

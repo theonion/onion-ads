@@ -46,7 +46,7 @@ Options:
         this.setStyle = function($body) {
             var styles = {
 
-                ".vjs-control-bar": { 
+                ".vjs-controls-disabled .vjs-control-bar": { 
                     "display":"none" 
                 },
                 ".video-ad": {
@@ -78,35 +78,71 @@ Options:
                     "padding": "10px",
                     "top": "0px",
                     "right": "0px",
-                    "background-color": "blue",
                     "cursor": "pointer"
                 },
                 ".vjs-paused .vjs-poster": {
                     "z-index":"2",
-                    "display":"block !important"
-                }, 
-                ".unmuted + .video-sound": {
-                    "background-color": "green"
+                    "display":"block !important",
+                    "background-position": "center",
+                    "background-size":"cover"
                 },
-                ".vjs-paused + .video-sound": {
-                    "background-color": "red"
-                }
-                
+                ".video-sound i": {
+                    "color": "#eeeeee",
+                    "text-align":"center",
+                    "font-size":"20px",
+
+                },
+                ".video-sound i:hover": {
+                    "color": "#ffffff"
+                },
+                ".video-sound i.fa-volume-off": {
+                    "display":"block"
+                },
+
+                ".video-sound i.fa-volume-up": {
+                    "display": "none"
+                },
+
+                ".unmuted + .video-sound i.fa-volume-off": {
+                    "display": "none"
+                },
+
+                ".unmuted + .video-sound i.fa-volume-up": {
+                    "display": "block"
+                },
+                ".done + .video-sound i.fa-volume-up, .done + .video-sound i.fa-volume-off": {
+                    "display": "none"
+                },
+                ".video-sound i.fa-repeat" : {
+                    "display":"none"
+                },
+                ".done + .video-sound i.fa-repeat": {
+                    "display": "block"
+                },
+
+
             }
             return styles;
         };
+
+        this.destroy = function() {
+            this.player.dispose();
+            uber.destroy.call(this);
+        }
 
         this.setMarkup = function($body) {
             $(".video-ad", $body).html("");
             $body.append('<div class="video-ad"></div>');
             $(".video-ad", $body)
                 .append('<video id="video-ad' + this.slotName + '" class="video-js vjs-default-skin"></video>')
-                .append('<a class="video-sound"></a>')
+                .append('<a class="video-sound"><i class="fa fa-repeat"></i><i class="fa fa-volume-off"></i><i class="fa fa-volume-up"></i></a>')
                 .append('<a class="video-clickthru" target="_blank"></a>');
                 
             // find the video tag
             this.$video = $("video", $body)[0];
-
+            this.$head.append(
+                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'></link>"
+            )
             // register click event on play w/ sound button
             $(".video-sound", $body).click($.proxy(this.soundButtonClicked, this));
 
@@ -139,7 +175,8 @@ Options:
                 width: 'auto',
                 height: 'auto',
                 plugins: { controls: false },
-                poster: this.options.poster
+                poster: this.options.poster,
+                muted: true
             };
 
             
@@ -167,31 +204,28 @@ Options:
                 self.player.prevTime = 0;
                 self.player.src(self.sources);
                 self.player.volume(volume);
+                if (volume > 0) {
+                    console.log(volume);
+                    $(".video-js", self.$body).addClass("unmuted");
+                }
                 self.player.play();
             });
         };
 
         this.soundButtonClicked = function() {
-            
             if (!$(".video-js", this.$body).hasClass("unmuted")) {
-                $(".video-js", this.$body).addClass("unmuted");
                 this.play(80);
             }
             else {
-                $(".video-js", this.$body).removeClass("unmuted");
-                this.play(0);
+                //$(".video-js", this.$body).removeClass("unmuted");
+                this.player.volume(0);
+                $(".video-js", this.$body).removeClass("unmuted")
             }
         }
 
         this.onEnd = function() {
             // video done
-            
-            //put in poster
-            //$(".video-clickthru", this.$body).append('<img src="' + this.options.poster + '">');
-
-            // change icon to replay 
-
-            //$(".video-sound span").removeClass("fa-
+            $(".video-js", this.$body).addClass("done");
         }
 
         this.parseVastResponse = function(data) {
@@ -219,7 +253,6 @@ Options:
                           )[0];
                         }
                         clickthrough = clickthrough || "#";
-                        console.log("clickthru", clickthrough);
                         $('.video-clickthru', this.$body)
                             .attr("href", clickthrough)
                             .click(function(){
@@ -244,7 +277,6 @@ Options:
     Ads.units.BaseVideoUnit.defaults = $.extend({}, Ads.units.BaseUnit.defaults, {
         vast_url: {"type": "url", "default":""},
         poster: {"type": "image", "default":""}
-
     });
 
 })(this.Ads);

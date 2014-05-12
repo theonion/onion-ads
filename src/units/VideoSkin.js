@@ -33,9 +33,6 @@
                 "margin-left": "140px"
             }
 
-
-        
-
             if (this.options.gradient) {
                 var bodyBackground = window.parent.$("body").css("background-color");
                 styles["a.wallpaper"] =  {
@@ -51,9 +48,7 @@
                 }
             }
 
-            this.$iframe.contents().find("head").append(
-                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylestyles'>"
-            )
+
             return styles;
         }
 
@@ -68,8 +63,6 @@
 
     Ads.units.VideoSkin.defaults = $.extend({}, Ads.units.BaseVideoUnit.defaults, {
         image: {"type": "image", "default": ""},
-        clickthru: {"type": "url", "default": ""},
         gradient: {"type":"boolean", "default":true}
     });
-
 })(this.Ads);

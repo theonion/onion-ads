@@ -49,6 +49,10 @@
             var ads = new Ads({
                 //options
                 selector: ".ad",
+                refreshInterval: .1, // not yet implemented in onion-ads...
+                refreshLimit: 4,
+                onLoad: function() { console.log("ADS LOADED") },
+                onRefresh: function(c) { console.log("TRACK AD REFRESH", c) },
                 data: [
                     {
                         slotname: 'wallpaper',
