@@ -123,6 +123,9 @@
                     this.options.onRefresh(this.refreshCount)
                 }
             }
+            else {
+                this.refreshTimeout = setTimeout($.proxy(this.refresh, this), this.options.refreshInterval * 60 * 1000);
+            }
         }
 
         this.destroyUnits = function() {
