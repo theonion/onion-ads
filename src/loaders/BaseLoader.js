@@ -23,7 +23,7 @@
         }
 
         this.getSlots = function() {
-            return $(this.options.selector);
+            return $(this.options.selector).not(":hidden");
         }
 
         this.insertIframe = function(element, contents) {
