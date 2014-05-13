@@ -23,7 +23,7 @@
         }
 
         this.getSlots = function() {
-            return $(this.options.selector).not(":hidden");
+            return $(this.options.selector);
         }
 
         this.insertIframe = function(element, contents) {
@@ -124,6 +124,7 @@
                 }
             }
             else {
+                clearTimeout(this.refreshTimeout);
                 this.refreshTimeout = setTimeout($.proxy(this.refresh, this), this.options.refreshInterval * 60 * 1000);
             }
         }
