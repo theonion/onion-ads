@@ -176,7 +176,7 @@ var FlashReplace = {
         }
 
         this.getSlots = function() {
-            return $(this.options.selector).not(":hidden");
+            return $(this.options.selector);
         }
 
         this.insertIframe = function(element, contents) {
@@ -277,6 +277,7 @@ var FlashReplace = {
                 }
             }
             else {
+                clearTimeout(this.refreshTimeout);
                 this.refreshTimeout = setTimeout($.proxy(this.refresh, this), this.options.refreshInterval * 60 * 1000);
             }
         }
@@ -312,10 +313,12 @@ var FlashReplace = {
         this.refresh = function() {
             this.destroyUnits(); //remove any customizations from custom units...
             var ads = [];
-            $(self.activeAds).each(function(i){
-                ads.push(self.activeAds[this.data("slotname")]);
+            var self = this;
+            $(this.slots).each(function(){
+                var slotname = $(this).data("slotname");
+                ads.push(self.activeAds[slotname]);
             });
-            googletag.pubads().refresh(web_ads);
+            googletag.pubads().refresh(ads);
         }
         
         this.load = function() {

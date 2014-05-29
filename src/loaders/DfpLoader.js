@@ -11,10 +11,12 @@
         this.refresh = function() {
             this.destroyUnits(); //remove any customizations from custom units...
             var ads = [];
-            $(self.activeAds).each(function(i){
-                ads.push(self.activeAds[this.data("slotname")]);
+            var self = this;
+            $(this.slots).each(function(){
+                var slotname = $(this).data("slotname");
+                ads.push(self.activeAds[slotname]);
             });
-            googletag.pubads().refresh(web_ads);
+            googletag.pubads().refresh(ads);
         }
         
         this.load = function() {
