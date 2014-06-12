@@ -48,7 +48,7 @@
 
         // refresh just reloads the contents of the slots.
         this.refresh = function() {
-            this.loader.refresh();
+            this.reload();
         }
 
         this.destroy = function() {
