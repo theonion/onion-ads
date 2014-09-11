@@ -141,7 +141,7 @@ Options:
             // find the video tag
             this.$video = $("video", $body)[0];
             this.$head.append(
-                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'></link>"
+                "<link href='//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'></link>"
             )
             // register click event on play w/ sound button
             $(".video-sound", $body).click($.proxy(this.soundButtonClicked, this));

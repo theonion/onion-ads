@@ -102,7 +102,7 @@ var FlashReplace = {
                 loaderType = "BaseLoader";
             }
             else if (adHash !== "") {
-                options.url = "http://adops.onion.com/adbuilder/serve/?ad=" + adHash;
+                options.url = "//adops.onion.com/adbuilder/serve/?ad=" + adHash;
                 loaderType = "JsonLoader";
             }
             else if (typeof options.data !== "undefined") {
@@ -718,7 +718,7 @@ Options:
             // find the video tag
             this.$video = $("video", $body)[0];
             this.$head.append(
-                "<link href='http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'></link>"
+                "<link href='//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.min.css' rel='stylesheet'></link>"
             )
             // register click event on play w/ sound button
             $(".video-sound", $body).click($.proxy(this.soundButtonClicked, this));

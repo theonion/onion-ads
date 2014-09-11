@@ -25,7 +25,7 @@
                 loaderType = "BaseLoader";
             }
             else if (adHash !== "") {
-                options.url = "http://adops.onion.com/adbuilder/serve/?ad=" + adHash;
+                options.url = "//adops.onion.com/adbuilder/serve/?ad=" + adHash;
                 loaderType = "JsonLoader";
             }
             else if (typeof options.data !== "undefined") {
