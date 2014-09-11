@@ -3,8 +3,8 @@
   "version": "0.2",
   "homepage": "https://github.com/theonion/onion-ads",
   "authors": [
-    "Mike Wnuk <mwnuk@theonion.com>",
-    "Shaker Islam <sislam@theonion.com>"
+    "Mike Wnuk <webtech@theonion.com>",
+    "Shaker Islam <webtech@theonion.com>"
   ],
   "description": "This puts ads on the Onion & A.V. Club. You're welcome.",
   "main": "build/onion-ads.js",
